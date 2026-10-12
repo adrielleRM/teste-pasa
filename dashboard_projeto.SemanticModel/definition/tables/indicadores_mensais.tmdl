@@ -1,0 +1,137 @@
+/// Fato mensal por operadora (grão: Operadora x data_ref). Colunas ocultas: use as medidas de _Medidas. As colunas de razão (sinistralidade_pct, roi_pct, custo_per_capita_mensal) não devem ser somadas nem promediadas.
+table indicadores_mensais
+	lineageTag: b3f25d5a-e725-4bd0-b10d-0efc9d53fe76
+
+	column Operadora
+		dataType: string
+		isHidden
+		lineageTag: 84433c0e-f12d-4e3d-9195-f550ac9944b2
+		summarizeBy: none
+		sourceColumn: Operadora
+
+		annotation SummarizationSetBy = Automatic
+
+	column data_ref
+		dataType: dateTime
+		isHidden
+		formatString: dd/mm/yyyy
+		lineageTag: bc38f28e-b6c5-4698-83bd-97ce402e3b57
+		summarizeBy: none
+		sourceColumn: data_ref
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation UnderlyingDateTimeDataType = Date
+
+	column despesa_bruta
+		dataType: double
+		isHidden
+		formatString: #,0.00
+		lineageTag: 633bc414-0a32-48ad-873d-b0f9352b4eba
+		summarizeBy: sum
+		sourceColumn: despesa_bruta
+
+		annotation SummarizationSetBy = Automatic
+
+	column coparticipacao
+		dataType: double
+		isHidden
+		formatString: #,0.00
+		lineageTag: 30ba15e8-d62a-4037-aaa0-7b5fbdb266a5
+		summarizeBy: sum
+		sourceColumn: coparticipacao
+
+		annotation SummarizationSetBy = Automatic
+
+	column despesa_liquida
+		dataType: double
+		isHidden
+		formatString: #,0.00
+		lineageTag: d836c9f7-142e-4a9b-b5ee-6104f48e8b6a
+		summarizeBy: sum
+		sourceColumn: despesa_liquida
+
+		annotation SummarizationSetBy = Automatic
+
+	column registros
+		dataType: int64
+		isHidden
+		formatString: #,0
+		lineageTag: 2ef5685f-3266-4825-9ff8-dc9af059e6b5
+		summarizeBy: sum
+		sourceColumn: registros
+
+		annotation SummarizationSetBy = Automatic
+
+	column registros_liquidos_negativos
+		dataType: int64
+		isHidden
+		formatString: #,0
+		lineageTag: 786abc4e-19cb-46e5-8d12-d01e812e5742
+		summarizeBy: sum
+		sourceColumn: registros_liquidos_negativos
+
+		annotation SummarizationSetBy = Automatic
+
+	column vidas
+		dataType: int64
+		isHidden
+		formatString: #,0
+		lineageTag: cd3620a0-784b-497a-9d1f-5aa28af2aa50
+		summarizeBy: sum
+		sourceColumn: vidas
+
+		annotation SummarizationSetBy = Automatic
+
+	column receita
+		dataType: double
+		isHidden
+		formatString: #,0.00
+		lineageTag: 71be5603-4265-4e20-b8d3-35b378edf1c4
+		summarizeBy: sum
+		sourceColumn: receita
+
+		annotation SummarizationSetBy = Automatic
+
+	column sinistralidade_pct
+		dataType: double
+		isHidden
+		formatString: 0.00
+		lineageTag: f247df96-a0b1-4563-a740-3c03fda45862
+		summarizeBy: none
+		sourceColumn: sinistralidade_pct
+
+		annotation SummarizationSetBy = User
+
+	column roi_pct
+		dataType: double
+		isHidden
+		formatString: 0.00
+		lineageTag: 31922fa8-7438-4d7f-a91a-3549277997f9
+		summarizeBy: none
+		sourceColumn: roi_pct
+
+		annotation SummarizationSetBy = User
+
+	column custo_per_capita_mensal
+		dataType: double
+		isHidden
+		formatString: #,0.00
+		lineageTag: 2d7afefb-d007-46ee-ac09-143e258a5a0a
+		summarizeBy: none
+		sourceColumn: custo_per_capita_mensal
+
+		annotation SummarizationSetBy = User
+
+	partition indicadores_mensais = m
+		mode: import
+		source =
+				let
+				  Origem = Csv.Document(File.Contents(PastaOutput & "indicadores_mensais.csv"), [Delimiter = ",", Columns = 12, Encoding = 65001, QuoteStyle = QuoteStyle.None]),
+				  #"Cabeçalhos promovidos" = Table.PromoteHeaders(Origem, [PromoteAllScalars = true]),
+				  #"Tipos alterados" = Table.TransformColumnTypes(#"Cabeçalhos promovidos", {{"Operadora", type text}, {"data_ref", type date}, {"despesa_bruta", type number}, {"coparticipacao", type number}, {"despesa_liquida", type number}, {"registros", Int64.Type}, {"registros_liquidos_negativos", Int64.Type}, {"vidas", Int64.Type}, {"receita", type number}, {"sinistralidade_pct", type number}, {"roi_pct", type number}, {"custo_per_capita_mensal", type number}}, "en-US")
+				in
+				  #"Tipos alterados"
+
+	annotation PBI_ResultType = Table
+

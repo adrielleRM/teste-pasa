@@ -1,0 +1,85 @@
+/// Dimensão de datas (marcada como tabela de datas). Intervalo derivado de indicadores_mensais[data_ref], do 1º dia do mês inicial ao último dia do mês final.
+table dCalendario
+	lineageTag: f98a5bf9-e4cf-4a9e-aabe-7f4795e10fb1
+	dataCategory: Time
+
+	column Date
+		dataType: dateTime
+		isKey
+		formatString: dd/mm/yyyy
+		lineageTag: d78c31b2-5c05-46fc-a0d8-1dad8831191f
+		summarizeBy: none
+		isNameInferred
+		sourceColumn: [Date]
+
+		annotation SummarizationSetBy = Automatic
+
+	column Ano
+		dataType: int64
+		formatString: 0
+		lineageTag: bc367b66-6935-49a7-97f2-185b4cd96fac
+		summarizeBy: none
+		isNameInferred
+		sourceColumn: [Ano]
+
+		annotation SummarizationSetBy = User
+
+	column MesNumero
+		dataType: int64
+		isHidden
+		formatString: 0
+		lineageTag: 4c66d87b-7b93-44de-a480-358141b71aba
+		summarizeBy: none
+		isNameInferred
+		sourceColumn: [MesNumero]
+
+		annotation SummarizationSetBy = User
+
+	column Mes
+		dataType: string
+		lineageTag: 93ad5601-86bb-4573-aa81-e52a196fa53b
+		summarizeBy: none
+		isNameInferred
+		sourceColumn: [Mes]
+		sortByColumn: MesNumero
+
+		annotation SummarizationSetBy = Automatic
+
+	column AnoMes
+		dataType: string
+		lineageTag: 22edc108-8949-4175-be03-4ebfaa327d83
+		summarizeBy: none
+		isNameInferred
+		sourceColumn: [AnoMes]
+		sortByColumn: AnoMesOrdem
+
+		annotation SummarizationSetBy = Automatic
+
+	column AnoMesOrdem
+		dataType: int64
+		isHidden
+		formatString: 0
+		lineageTag: aa2e1916-2bd5-4ca8-97b6-b9b73bbc2353
+		summarizeBy: none
+		isNameInferred
+		sourceColumn: [AnoMesOrdem]
+
+		annotation SummarizationSetBy = User
+
+	partition dCalendario = calculated
+		mode: import
+		source =
+				VAR _Inicio = MIN ( indicadores_mensais[data_ref] )
+				VAR _Fim = EOMONTH ( MAX ( indicadores_mensais[data_ref] ), 0 )
+				RETURN
+				    ADDCOLUMNS (
+				        CALENDAR ( DATE ( YEAR ( _Inicio ), MONTH ( _Inicio ), 1 ), _Fim ),
+				        "Ano", YEAR ( [Date] ),
+				        "MesNumero", MONTH ( [Date] ),
+				        "Mes", FORMAT ( [Date], "mmm", "pt-BR" ),
+				        "AnoMes", FORMAT ( [Date], "mmm/yy", "pt-BR" ),
+				        "AnoMesOrdem", YEAR ( [Date] ) * 100 + MONTH ( [Date] )
+				    )
+
+	annotation PBI_Id = 8d03bb661840481a8bf07f670ab9ef37
+

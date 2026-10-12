@@ -1,0 +1,85 @@
+/// Vidas e despesa líquida mensais dos dois planos da transferência de carteira de jan/2026 (origem na X, destino na Y). Gerado por scripts/gerar_tabelas_complementares_powerbi.py.
+table migracao_planos_mensal
+	lineageTag: fd4774f7-7950-4f82-b877-1cc3d50519eb
+
+	column Operadora
+		dataType: string
+		isHidden
+		lineageTag: 76fa57cc-3a70-4b46-95c9-a8b7b5f88d35
+		summarizeBy: none
+		sourceColumn: Operadora
+
+		annotation SummarizationSetBy = Automatic
+
+	column Plano
+		dataType: string
+		lineageTag: 2a8c5474-b5d4-4ae1-bdbb-0e26081eeaae
+		summarizeBy: none
+		sourceColumn: Plano
+
+		annotation SummarizationSetBy = Automatic
+
+	column 'Papel na Migração'
+		dataType: string
+		lineageTag: a1e6133a-4d02-4325-8d29-75764d4126d8
+		summarizeBy: none
+		sourceColumn: papel_migracao
+
+		annotation SummarizationSetBy = Automatic
+
+	column data_ref
+		dataType: dateTime
+		isHidden
+		formatString: dd/mm/yyyy
+		lineageTag: 2302e827-99e2-4140-851a-0d1b0e3238e1
+		summarizeBy: none
+		sourceColumn: data_ref
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation UnderlyingDateTimeDataType = Date
+
+	column mes_migracao
+		dataType: dateTime
+		isHidden
+		formatString: mmm/yyyy
+		lineageTag: 22239c07-5bd6-4b68-a719-1c5a2bd0b41a
+		summarizeBy: none
+		sourceColumn: mes_migracao
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation UnderlyingDateTimeDataType = Date
+
+	column vidas
+		dataType: int64
+		isHidden
+		formatString: #,0
+		lineageTag: c8cc1687-e11c-40ec-97e4-b8266231de64
+		summarizeBy: sum
+		sourceColumn: vidas
+
+		annotation SummarizationSetBy = Automatic
+
+	column despesa_liquida
+		dataType: double
+		isHidden
+		formatString: #,0.00
+		lineageTag: fea79e66-91d6-4107-ab20-ddcc55b8c0df
+		summarizeBy: sum
+		sourceColumn: despesa_liquida
+
+		annotation SummarizationSetBy = Automatic
+
+	partition migracao_planos_mensal = m
+		mode: import
+		source =
+				let
+				  Origem = Csv.Document(File.Contents(PastaOutput & "migracao_planos_mensal.csv"), [Delimiter = ",", Columns = 7, Encoding = 65001, QuoteStyle = QuoteStyle.None]),
+				  #"Cabeçalhos promovidos" = Table.PromoteHeaders(Origem, [PromoteAllScalars = true]),
+				  #"Tipos alterados" = Table.TransformColumnTypes(#"Cabeçalhos promovidos", {{"Operadora", type text}, {"Plano", type text}, {"papel_migracao", type text}, {"data_ref", type date}, {"mes_migracao", type date}, {"vidas", Int64.Type}, {"despesa_liquida", type number}}, "en-US")
+				in
+				  #"Tipos alterados"
+
+	annotation PBI_ResultType = Table
+

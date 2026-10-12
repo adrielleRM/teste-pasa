@@ -1,0 +1,38 @@
+/// Tabela desconectada com os cenários da matriz de sensibilidade da sinistralidade da Y (página Qualidade e limitações).
+table 'Cenário Sensibilidade'
+	lineageTag: 7c2e9a41-3b8d-4f16-9e5a-0d4b6c8f2a97
+
+	column Cenário
+		dataType: string
+		lineageTag: 1a5d8f3c-9e2b-4c7a-b041-6f3e8d2a9c58
+		summarizeBy: none
+		isNameInferred
+		sourceColumn: [Cenário]
+		sortByColumn: Ordem
+
+		annotation SummarizationSetBy = Automatic
+
+	column Ordem
+		dataType: int64
+		isHidden
+		formatString: 0
+		lineageTag: 5e9b2d7f-1c4a-4a83-8d6e-2b7f9c0a4e16
+		summarizeBy: none
+		isNameInferred
+		sourceColumn: [Ordem]
+
+		annotation SummarizationSetBy = User
+
+	partition 'Cenário Sensibilidade' = calculated
+		mode: import
+		source =
+				DATATABLE (
+				    "Ordem", INTEGER,
+				    "Cenário", STRING,
+				    {
+				        { 1, "Cenário Observado (Base Oficial)" },
+				        { 2, "Cenário Truncado (Copart > Bruto zerado)" },
+				        { 3, "Variação de Sensibilidade" }
+				    }
+				)
+

@@ -1,0 +1,390 @@
+/// Tabela dedicada às medidas do modelo. Todas as razões são calculadas como razão de totais (nunca média de razões mensais).
+table _Medidas
+	lineageTag: 8e951f35-6dc7-487a-be91-1ad4c877f79f
+
+	/// Receita mensal somada. Apenas a Operadora Y possui receita na base; para a X o resultado é BLANK (indisponível, nunca zero).
+	measure Receita = SUM ( indicadores_mensais[receita] )
+		formatString: "R$"\ #,0;-"R$"\ #,0;"R$"\ #,0
+		displayFolder: 01 Financeiro
+		lineageTag: 32a15afa-8e9f-44b5-9a69-369ed601dca8
+
+	/// Soma do valor bruto das despesas assistenciais.
+	measure 'Despesa Bruta' = SUM ( indicadores_mensais[despesa_bruta] )
+		formatString: "R$"\ #,0;-"R$"\ #,0;"R$"\ #,0
+		displayFolder: 01 Financeiro
+		lineageTag: e007a150-e2b8-4ee2-98f0-3eaa789cd9f4
+
+	/// Soma da coparticipação paga pelos beneficiários.
+	measure Coparticipação = SUM ( indicadores_mensais[coparticipacao] )
+		formatString: "R$"\ #,0;-"R$"\ #,0;"R$"\ #,0
+		displayFolder: 01 Financeiro
+		lineageTag: 6b4cc0e5-f701-415b-ae4e-842ab6e1ae79
+
+	/// Despesa líquida estimada = bruto − coparticipação (regra oficial ainda não confirmada pela operadora).
+	measure 'Despesa Líquida' = SUM ( indicadores_mensais[despesa_liquida] )
+		formatString: "R$"\ #,0;-"R$"\ #,0;"R$"\ #,0
+		displayFolder: 01 Financeiro
+		lineageTag: 527fead9-a1e7-4754-9e53-fba45b7bc988
+
+	/// Despesa líquida da Operadora X (para cards). Substitui a medida antiga 'Despesa Líquida Operadora X'.
+	measure 'Despesa Líquida X' = CALCULATE ( [Despesa Líquida], dOperadora[Operadora] = "Operadora X" )
+		formatString: "R$"\ #,0;-"R$"\ #,0;"R$"\ #,0
+		displayFolder: 01 Financeiro
+		lineageTag: 164e4312-13ee-41db-b915-d0140a48feda
+
+	/// Despesa líquida da Operadora Y (para cards). Substitui a medida antiga 'Despesa Líquida Operadora Y'.
+	measure 'Despesa Líquida Y' = CALCULATE ( [Despesa Líquida], dOperadora[Operadora] = "Operadora Y" )
+		formatString: "R$"\ #,0;-"R$"\ #,0;"R$"\ #,0
+		displayFolder: 01 Financeiro
+		lineageTag: 87c8b91b-b45a-437a-a39a-84cb37576f7a
+
+	/// Exposição: soma das vidas de cada competência (vidas-mês). Denominador correto do custo per capita.
+	measure 'Vidas-Mês (Exposição)' = SUM ( indicadores_mensais[vidas] )
+		formatString: #,0
+		displayFolder: 03 Carteira
+		lineageTag: 77c50ff0-54f5-419b-b008-0a1fb42c46c6
+
+	/// Média mensal de vidas no período filtrado (média das competências com dados).
+	measure 'Vidas Média Mensal' = AVERAGEX ( VALUES ( dCalendario[AnoMesOrdem] ), [Vidas-Mês (Exposição)] )
+		formatString: #,0
+		displayFolder: 03 Carteira
+		lineageTag: 1cb12f77-74e5-4748-badc-db741676c952
+
+	/// Sinistralidade = despesa líquida ÷ receita, considerando SOMENTE linhas com receita > 0. Evita que a despesa da Operadora X (sem receita) infle o total consolidado (erro de 112,48% → correto 34,15%).
+	measure 'Sinistralidade %' =
+			VAR _Receita = CALCULATE ( [Receita], KEEPFILTERS ( indicadores_mensais[receita] > 0 ) )
+			VAR _Despesa = CALCULATE ( [Despesa Líquida], KEEPFILTERS ( indicadores_mensais[receita] > 0 ) )
+			RETURN
+			    DIVIDE ( _Despesa, _Receita )
+		formatString: 0.00%;-0.00%;0.00%
+		displayFolder: 02 Indicadores
+		lineageTag: 7fee24c9-9bb3-490b-87cc-8efbde237d76
+
+	/// Sinistralidade da Operadora Y (34,15% no período).
+	measure 'Sinistralidade % Y' = CALCULATE ( [Sinistralidade %], dOperadora[Operadora] = "Operadora Y" )
+		formatString: 0.00%;-0.00%;0.00%
+		displayFolder: 02 Indicadores
+		lineageTag: 2b6040e8-947c-49c2-b16c-5390a7a7008a
+
+	/// ROI assistencial = (receita − despesa líquida) ÷ despesa líquida, somente em linhas com receita > 0.
+	measure 'ROI Assistencial %' =
+			VAR _Receita = CALCULATE ( [Receita], KEEPFILTERS ( indicadores_mensais[receita] > 0 ) )
+			VAR _Despesa = CALCULATE ( [Despesa Líquida], KEEPFILTERS ( indicadores_mensais[receita] > 0 ) )
+			RETURN
+			    DIVIDE ( _Receita - _Despesa, _Despesa )
+		formatString: 0.00%;-0.00%;0.00%
+		displayFolder: 02 Indicadores
+		lineageTag: 065d6fbb-e85d-4954-8e21-bb24c03879c4
+
+	/// ROI assistencial da Operadora Y (192,80% no período).
+	measure 'ROI Assistencial % Y' = CALCULATE ( [ROI Assistencial %], dOperadora[Operadora] = "Operadora Y" )
+		formatString: 0.00%;-0.00%;0.00%
+		displayFolder: 02 Indicadores
+		lineageTag: 23fe77ea-7243-45d0-85d5-ec277a29b933
+
+	/// Custo per capita = despesa líquida ÷ vidas-mês (razão de totais). Correto em qualquer nível, inclusive no total geral. X R$ 124,39 · Y R$ 261,54.
+	measure 'Custo Per Capita' = DIVIDE ( [Despesa Líquida], [Vidas-Mês (Exposição)] )
+		formatString: "R$"\ #,0.00;-"R$"\ #,0.00;"R$"\ #,0.00
+		displayFolder: 02 Indicadores
+		lineageTag: bab40779-adc3-45c7-b548-0a93eed2614c
+
+	/// Custo per capita da Operadora X. Substitui 'Custo Per Capita Médio - Operadora X', que dividia médias.
+	measure 'Custo Per Capita X' = CALCULATE ( [Custo Per Capita], dOperadora[Operadora] = "Operadora X" )
+		formatString: "R$"\ #,0.00;-"R$"\ #,0.00;"R$"\ #,0.00
+		displayFolder: 02 Indicadores
+		lineageTag: 1f68eeba-cdbf-49e1-93cd-9e22e96c0a92
+
+	/// Custo per capita da Operadora Y. Substitui 'Custo Per Capita Médio - Operadora Y', que dividia médias.
+	measure 'Custo Per Capita Y' = CALCULATE ( [Custo Per Capita], dOperadora[Operadora] = "Operadora Y" )
+		formatString: "R$"\ #,0.00;-"R$"\ #,0.00;"R$"\ #,0.00
+		displayFolder: 02 Indicadores
+		lineageTag: eb2988eb-42d6-43b2-b1cf-7c979e5b5f2c
+
+	/// Padronização direta por idade: custo líquido por vida de cada faixa da operadora em contexto × peso da faixa na carteira da Operadora X (vidas-mês). Na Operadora Y = R$ 111,15.
+	measure 'Custo Per Capita Padronizado (Mix X)' =
+			VAR _VidasX =
+			    CALCULATE ( [Vidas-Mês (Faixa)], dOperadora[Operadora] = "Operadora X", REMOVEFILTERS ( dFaixaEtaria ) )
+			RETURN
+			    SUMX (
+			        VALUES ( dFaixaEtaria[Faixa Etária] ),
+			        VAR _PesoX = DIVIDE ( CALCULATE ( [Vidas-Mês (Faixa)], dOperadora[Operadora] = "Operadora X" ), _VidasX )
+			        RETURN [Custo Per Capita por Faixa] * _PesoX
+			    )
+		formatString: "R$"\ #,0.00;-"R$"\ #,0.00;"R$"\ #,0.00
+		displayFolder: 02 Indicadores
+		lineageTag: d588e82b-2b5b-45b5-87ae-43b4bb441c57
+
+	/// Custo per capita da Operadora Y com a pirâmide etária da X (valor justo de comparação: R$ 111,15).
+	measure 'Custo Per Capita Padronizado Y (Mix X)' = CALCULATE ( [Custo Per Capita Padronizado (Mix X)], dOperadora[Operadora] = "Operadora Y" )
+		formatString: "R$"\ #,0.00;-"R$"\ #,0.00;"R$"\ #,0.00
+		displayFolder: 02 Indicadores
+		lineageTag: edfa5d1e-e28b-4d03-b383-1f64d21ae8d5
+
+	/// Parcela da diferença de per capita Y − X explicada pela composição etária = 1 − (padronizado Y − X) ÷ (observado Y − X). Resultado: 109,7%.
+	measure '% Diferença Explicada pela Idade' =
+			VAR _X = [Custo Per Capita X]
+			VAR _GapObservado = [Custo Per Capita Y] - _X
+			VAR _GapPadronizado = [Custo Per Capita Padronizado Y (Mix X)] - _X
+			RETURN
+			    IF ( _GapObservado <> 0, 1 - DIVIDE ( _GapPadronizado, _GapObservado ) )
+		formatString: 0.0%;-0.0%;0.0%
+		displayFolder: 02 Indicadores
+		lineageTag: cf637fb7-13dd-4003-a60f-548014806772
+
+	/// Despesa líquida da tabela por faixa etária (mesmo total de indicadores_mensais).
+	measure 'Despesa Líquida (Faixa)' = SUM ( despesa_vidas_faixa_mensal[despesa_liquida] )
+		formatString: "R$"\ #,0;-"R$"\ #,0;"R$"\ #,0
+		displayFolder: 03 Carteira\Base por faixa
+		lineageTag: 5a83bd2c-75f0-438b-ace4-f04390bcae8b
+
+	/// Despesa bruta da tabela por faixa etária.
+	measure 'Despesa Bruta (Faixa)' = SUM ( despesa_vidas_faixa_mensal[despesa_bruta] )
+		formatString: "R$"\ #,0;-"R$"\ #,0;"R$"\ #,0
+		displayFolder: 03 Carteira\Base por faixa
+		lineageTag: c626f4a4-3c0b-432e-8ee6-b6db847b0416
+
+	/// Vidas-mês da tabela por faixa etária.
+	measure 'Vidas-Mês (Faixa)' = SUM ( despesa_vidas_faixa_mensal[vidas] )
+		formatString: #,0
+		displayFolder: 03 Carteira\Base por faixa
+		lineageTag: b539ba24-d12e-4735-9565-a579dae9cfcd
+
+	/// Custo líquido por vida/mês na faixa etária em contexto.
+	measure 'Custo Per Capita por Faixa' = DIVIDE ( [Despesa Líquida (Faixa)], [Vidas-Mês (Faixa)] )
+		formatString: "R$"\ #,0.00;-"R$"\ #,0.00;"R$"\ #,0.00
+		displayFolder: 03 Carteira
+		lineageTag: e1705f44-d631-412c-90ab-757024923e21
+
+	/// Participação da faixa nas vidas-mês da operadora (Y 59+ = 48,51%).
+	measure '% Vidas na Faixa' = DIVIDE ( [Vidas-Mês (Faixa)], CALCULATE ( [Vidas-Mês (Faixa)], REMOVEFILTERS ( dFaixaEtaria ) ) )
+		formatString: 0.00%;-0.00%;0.00%
+		displayFolder: 03 Carteira
+		lineageTag: 2180f1d3-ec07-4e8e-9276-8aa5db6e3f08
+
+	/// Participação da faixa na despesa bruta da operadora (Y 59+ = 78,39%).
+	measure '% Despesa Bruta na Faixa' = DIVIDE ( [Despesa Bruta (Faixa)], CALCULATE ( [Despesa Bruta (Faixa)], REMOVEFILTERS ( dFaixaEtaria ) ) )
+		formatString: 0.00%;-0.00%;0.00%
+		displayFolder: 03 Carteira
+		lineageTag: 3c4d8112-d0d5-423f-8143-91cb94f589c1
+
+	/// Lado esquerdo da pirâmide: % de vidas da X com sinal negativo (o formato exibe o valor absoluto).
+	measure 'Pirâmide % Vidas X' = - CALCULATE ( [% Vidas na Faixa], dOperadora[Operadora] = "Operadora X" )
+		formatString: 0.0%;0.0%;0.0%
+		displayFolder: 03 Carteira
+		lineageTag: 7921ecf1-c2a6-43f7-b61a-f6a7b63a4791
+
+	/// Lado direito da pirâmide: % de vidas da Y.
+	measure 'Pirâmide % Vidas Y' = CALCULATE ( [% Vidas na Faixa], dOperadora[Operadora] = "Operadora Y" )
+		formatString: 0.0%;0.0%;0.0%
+		displayFolder: 03 Carteira
+		lineageTag: 27be0836-2c56-4bd3-a0d4-24d0ce7f5478
+
+	/// % de vidas da Operadora Y na faixa 59 e acima.
+	measure '% Vidas 59+ Y' = CALCULATE ( [% Vidas na Faixa], dOperadora[Operadora] = "Operadora Y", dFaixaEtaria[Grupo Etário] = "59+" )
+		formatString: 0.00%;-0.00%;0.00%
+		displayFolder: 03 Carteira
+		lineageTag: d8555574-5a47-4c60-aa2f-76f3a0192fbe
+
+	/// % da despesa bruta da Operadora Y concentrada na faixa 59 e acima.
+	measure '% Despesa 59+ Y' = CALCULATE ( [% Despesa Bruta na Faixa], dOperadora[Operadora] = "Operadora Y", dFaixaEtaria[Grupo Etário] = "59+" )
+		formatString: 0.00%;-0.00%;0.00%
+		displayFolder: 03 Carteira
+		lineageTag: 22f2d673-e126-4a3d-9b34-c5a365ae110c
+
+	/// Despesa bruta da tabela de mix assistencial.
+	measure 'Despesa Bruta (Mix)' = SUM ( perfil_despesas_classificacao[despesa_bruta] )
+		formatString: "R$"\ #,0;-"R$"\ #,0;"R$"\ #,0
+		displayFolder: 01 Financeiro\Mix
+		lineageTag: e1974e56-ebff-4e57-949e-81269be10c8b
+
+	/// Participação da classificação na despesa bruta da operadora em contexto (remove apenas o filtro de classificação).
+	measure '% Mix Despesa' =
+			DIVIDE (
+			    [Despesa Bruta (Mix)],
+			    CALCULATE (
+			        [Despesa Bruta (Mix)],
+			        REMOVEFILTERS ( perfil_despesas_classificacao[classificacao], perfil_despesas_classificacao[Grupo Mix] )
+			    )
+			)
+		formatString: 0.0%;-0.0%;0.0%
+		displayFolder: 01 Financeiro\Mix
+		lineageTag: 710c08c0-1aa7-4caf-9d80-2da0a03f90c7
+
+	/// Mix de despesa da Operadora X.
+	measure '% Mix Despesa X' = CALCULATE ( [% Mix Despesa], dOperadora[Operadora] = "Operadora X" )
+		formatString: 0.0%;-0.0%;0.0%
+		displayFolder: 01 Financeiro\Mix
+		lineageTag: 47303ebd-900f-4f1d-ae53-bbe88af13384
+
+	/// Mix de despesa da Operadora Y (medicamentos 28,26% e pacotes 21,42%).
+	measure '% Mix Despesa Y' = CALCULATE ( [% Mix Despesa], dOperadora[Operadora] = "Operadora Y" )
+		formatString: 0.0%;-0.0%;0.0%
+		displayFolder: 01 Financeiro\Mix
+		lineageTag: 75bf144f-246e-44f0-8059-76a043844f1a
+
+	/// Vidas dos dois planos envolvidos na transferência de carteira.
+	measure 'Vidas Planos Migrados' = SUM ( migracao_planos_mensal[vidas] )
+		formatString: #,0
+		displayFolder: 04 Migração
+		lineageTag: 179ca246-dfe3-4256-8b13-7154f0935189
+
+	/// Despesa líquida dos planos migrados: cauda (run-off) na X e maturação na Y.
+	measure 'Despesa Líquida Planos Migrados' = SUM ( migracao_planos_mensal[despesa_liquida] )
+		formatString: "R$"\ #,0;-"R$"\ #,0;"R$"\ #,0
+		displayFolder: 04 Migração
+		lineageTag: 50e355d2-76cb-4bd9-b676-53e0154db663
+
+	/// Vidas-mês sem os planos da transferência (base do crescimento orgânico).
+	measure 'Vidas Orgânicas' = [Vidas-Mês (Exposição)] - [Vidas Planos Migrados]
+		formatString: #,0
+		displayFolder: 04 Migração
+		lineageTag: 9d9a1b5e-9c44-476b-8e32-fddb5ba524d9
+
+	/// Variação ponta a ponta das vidas no período filtrado (1ª vs última competência). X −2,05% · Y +12,42%.
+	measure 'Variação Vidas Total %' =
+			VAR _Inicio = MIN ( indicadores_mensais[data_ref] )
+			VAR _Fim = MAX ( indicadores_mensais[data_ref] )
+			VAR _VidasInicio = CALCULATE ( [Vidas-Mês (Exposição)], dCalendario[Date] = _Inicio )
+			VAR _VidasFim = CALCULATE ( [Vidas-Mês (Exposição)], dCalendario[Date] = _Fim )
+			RETURN
+			    DIVIDE ( _VidasFim - _VidasInicio, _VidasInicio )
+		formatString: +0.00%;-0.00%;0.00%
+		displayFolder: 04 Migração
+		lineageTag: c4d7f605-5ecf-4afd-91ab-19c8af26bffe
+
+	/// Variação ponta a ponta das vidas excluindo os planos da transferência de ~10 mil vidas de jan/2026. X +0,52% · Y −0,84%.
+	measure 'Variação Vidas Orgânica %' =
+			VAR _Inicio = MIN ( indicadores_mensais[data_ref] )
+			VAR _Fim = MAX ( indicadores_mensais[data_ref] )
+			VAR _VidasInicio = CALCULATE ( [Vidas Orgânicas], dCalendario[Date] = _Inicio )
+			VAR _VidasFim = CALCULATE ( [Vidas Orgânicas], dCalendario[Date] = _Fim )
+			RETURN
+			    DIVIDE ( _VidasFim - _VidasInicio, _VidasInicio )
+		formatString: +0.00%;-0.00%;0.00%
+		displayFolder: 04 Migração
+		lineageTag: 4ab6cd25-5137-4933-a60a-3cb3fe37fe76
+
+	/// Variação orgânica de vidas da Operadora Y (−0,84%, contra +12,42% no total).
+	measure 'Variação Vidas Orgânica % Y' = CALCULATE ( [Variação Vidas Orgânica %], dOperadora[Operadora] = "Operadora Y" )
+		formatString: +0.00%;-0.00%;0.00%
+		displayFolder: 04 Migração
+		lineageTag: 4b5f5638-deeb-4389-babd-cf9f76c7f90d
+
+	/// Variação total de vidas da Operadora Y (+12,42%).
+	measure 'Variação Vidas Total % Y' = CALCULATE ( [Variação Vidas Total %], dOperadora[Operadora] = "Operadora Y" )
+		formatString: +0.00%;-0.00%;0.00%
+		displayFolder: 04 Migração
+		lineageTag: bc58f451-790d-4ec7-a541-2cc1788588c4
+
+	/// Registros de despesa com coparticipação maior que o valor bruto.
+	measure 'Ocorrências Copart > Bruto' = SUM ( qualidade_dados_financeiros[ocorrencias] )
+		formatString: #,0
+		displayFolder: 05 Qualidade
+		lineageTag: 5b5cd091-f54a-4c69-af47-7e93a736fab0
+
+	/// Total de registros de despesa analisados.
+	measure 'Registros de Despesa' = SUM ( qualidade_dados_financeiros[registros] )
+		formatString: #,0
+		displayFolder: 05 Qualidade
+		lineageTag: 04359340-2fed-416c-85fb-4ab92089ae34
+
+	/// % dos registros com coparticipação > bruto (razão de totais: X 0,53% · Y 0,11%). Substitui a coluna percentual_ocorrencias, que era truncada para inteiro na carga.
+	measure '% Ocorrências Copart > Bruto' = DIVIDE ( [Ocorrências Copart > Bruto], [Registros de Despesa] )
+		formatString: 0.00%;-0.00%;0.00%
+		displayFolder: 05 Qualidade
+		lineageTag: 7ff11d0c-8d59-4673-b1f6-92fe7d56ee46
+
+	/// Saldo (bruto − coparticipação) somado nos registros com ocorrência; valor negativo que reduz a despesa líquida.
+	measure 'Saldo Negativo nas Ocorrências' = SUM ( qualidade_dados_financeiros[saldo_estimado_nas_ocorrencias] )
+		formatString: "R$"\ #,0;-"R$"\ #,0;"R$"\ #,0
+		displayFolder: 05 Qualidade
+		lineageTag: d3e4f3ce-e613-4a88-89ff-2a8f788c7849
+
+	/// Cor das barras da Y na pirâmide: dourado PASA na faixa 59+, tom apagado nas demais.
+	measure 'Cor Pirâmide Y' = IF ( MAX ( dFaixaEtaria[Ordem Faixa] ) >= 59, "#F5A623", "#A9834A" )
+		displayFolder: 99 Formatação
+		lineageTag: c0932cc7-c5ff-40c5-b48b-49202c6d8b26
+
+	/// Cor das barras da Y no mix: destaque dourado para Medicamentos e Pacotes.
+	measure 'Cor Mix Y' = IF ( SELECTEDVALUE ( perfil_despesas_classificacao[Grupo Mix] ) IN { "Medicamentos", "Pacotes" }, "#F5A623", "#A9834A" )
+		displayFolder: 99 Formatação
+		lineageTag: 3edd80d6-c1b6-4e6b-8c3e-cdd731ebda93
+
+	/// Subtítulo dinâmico do card de per capita padronizado.
+	measure 'Subtítulo Padronizado' = "Pirâmide etária da X · idade explica " & FORMAT ( [% Diferença Explicada pela Idade], "0.0%", "pt-BR" ) & " do gap"
+		displayFolder: 99 Formatação
+		lineageTag: f917c48e-fc0b-4e58-b946-8e09bab5f311
+
+	/// Subtítulo dinâmico do card de sinistralidade.
+	measure 'Subtítulo Sinistralidade' = "ROI assistencial Y: " & FORMAT ( [ROI Assistencial % Y], "0.00%", "pt-BR" )
+		displayFolder: 99 Formatação
+		lineageTag: 6121ddab-ea22-4be5-a3f7-827e7ca4cb4d
+
+	/// Subtítulo dinâmico do card de variação de vidas.
+	measure 'Subtítulo Variação Vidas' = "Total com a migração: " & FORMAT ( [Variação Vidas Total % Y], "+0.00%;-0.00%", "pt-BR" )
+		displayFolder: 99 Formatação
+		lineageTag: 5dcc3728-3e9b-4075-beef-5e0824d0c509
+
+	/// Sinistralidade da Y se os registros com coparticipação > bruto fossem truncados em zero: (despesa líquida − saldo negativo das ocorrências) ÷ receita. O saldo vem de qualidade_dados_financeiros, que é consolidado do período (não responde a filtro de data).
+	measure 'Sinistralidade Truncada % Y' =
+			VAR _Receita = CALCULATE ( [Receita], dOperadora[Operadora] = "Operadora Y", KEEPFILTERS ( indicadores_mensais[receita] > 0 ) )
+			VAR _Despesa = CALCULATE ( [Despesa Líquida], dOperadora[Operadora] = "Operadora Y", KEEPFILTERS ( indicadores_mensais[receita] > 0 ) )
+			VAR _Saldo = CALCULATE ( [Saldo Negativo nas Ocorrências], dOperadora[Operadora] = "Operadora Y" )
+			RETURN
+			    DIVIDE ( _Despesa - _Saldo, _Receita )
+		formatString: 0.00%;-0.00%;0.00%
+		displayFolder: 05 Qualidade
+		lineageTag: 0b4f2c61-1d7e-4c55-9a3e-6f1e2a8d4c11
+
+	/// Diferença em pontos percentuais entre a sinistralidade truncada e a observada da Y (+0,08 p.p. exatos; 34,24% − 34,15% com arredondamento).
+	measure 'Sensibilidade Truncamento (p.p.)' = ( [Sinistralidade Truncada % Y] - [Sinistralidade % Y] ) * 100
+		formatString: +0.00 "p.p.";-0.00 "p.p.";0.00 "p.p."
+		displayFolder: 05 Qualidade
+		lineageTag: 6a2d9e47-8b1c-4f3a-b5d0-2c7e9f1a3b52
+
+	/// Valor da matriz de sensibilidade por cenário: observado, truncado ou a variação em p.p. O formato é dinâmico (percentual nas linhas 1–2, p.p. na linha 3).
+	measure 'Sinistralidade Y por Cenário' =
+			SWITCH (
+			    SELECTEDVALUE ( 'Cenário Sensibilidade'[Ordem] ),
+			    1, [Sinistralidade % Y],
+			    2, [Sinistralidade Truncada % Y],
+			    3, [Sensibilidade Truncamento (p.p.)]
+			)
+		displayFolder: 05 Qualidade
+		lineageTag: 3e8c1f95-7d2a-4b6e-9c41-8f5a0d2e7b63
+
+		formatStringDefinition = IF ( SELECTEDVALUE ( 'Cenário Sensibilidade'[Ordem] ) = 3, "+0.00 ""p.p.""", "0.00%" )
+
+	/// Nota explicativa da matriz de sensibilidade, com o impacto calculado.
+	measure 'Subtítulo Sensibilidade' = "Impacto imaterial no balanço (" & FORMAT ( [Sensibilidade Truncamento (p.p.)], "+0.00;-0.00", "pt-BR" ) & " p.p.), comprovando que a inconsistência não distorce o resultado operacional da Y."
+		displayFolder: 99 Formatação
+		lineageTag: 9d1b7e30-4c8f-4a25-8e6b-1f3c5a9d2e74
+
+	/// Despesa líquida que a Operadora X seguiu pagando no plano de origem da migração após a saída das vidas (cauda / IBNR).
+	measure 'Cauda Pós-Migração X' =
+			VAR _MesMigracao = MIN ( migracao_planos_mensal[mes_migracao] )
+			RETURN
+			    CALCULATE (
+			        [Despesa Líquida Planos Migrados],
+			        dOperadora[Operadora] = "Operadora X",
+			        dCalendario[Date] >= _MesMigracao
+			    )
+		formatString: "R$"\ #,0;-"R$"\ #,0;"R$"\ #,0
+		displayFolder: 04 Migração
+		lineageTag: 4f7a2b18-6e3d-4c90-a1b5-7d2e8c4f9a35
+
+	column Coluna
+		dataType: int64
+		isHidden
+		formatString: 0
+		lineageTag: d5dd5ae8-2cd0-4525-a31b-2bd0f47db0c9
+		summarizeBy: none
+		isNameInferred
+		sourceColumn: [Coluna]
+
+		annotation SummarizationSetBy = Automatic
+
+	partition _Medidas = calculated
+		mode: import
+		source = ROW ( "Coluna", 0 )
+

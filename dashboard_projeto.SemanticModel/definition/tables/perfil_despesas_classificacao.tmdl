@@ -1,0 +1,75 @@
+/// Despesa bruta do período por operadora e classificação assistencial (mix de despesas).
+table perfil_despesas_classificacao
+	lineageTag: 07807d1a-dd09-4c78-8757-5a67562b8bfc
+
+	column Operadora
+		dataType: string
+		isHidden
+		lineageTag: cce91d7b-f41e-4545-9489-3dbfde778a7a
+		summarizeBy: none
+		sourceColumn: Operadora
+
+		annotation SummarizationSetBy = Automatic
+
+	column classificacao
+		dataType: string
+		lineageTag: 8a118ea3-53fb-4457-ba60-afbd69f7e11e
+		summarizeBy: none
+		sourceColumn: classificacao
+
+		annotation SummarizationSetBy = Automatic
+
+	column despesa_bruta
+		dataType: double
+		isHidden
+		formatString: #,0.00
+		lineageTag: 038b442e-072e-4998-9660-430aab167cac
+		summarizeBy: sum
+		sourceColumn: despesa_bruta
+
+		annotation SummarizationSetBy = Automatic
+
+	column participacao_pct
+		dataType: double
+		isHidden
+		formatString: 0.00
+		lineageTag: a0b14449-0896-4fb0-9b0c-ea21d053d21a
+		summarizeBy: none
+		sourceColumn: participacao_pct
+
+		annotation SummarizationSetBy = User
+
+	/// Classificação com rótulo amigável; categorias com menos de 1% da despesa nas duas operadoras viram 'Outros' (mesmo agrupamento do relatório executivo HTML).
+	column 'Grupo Mix' =
+			SWITCH (
+			    perfil_despesas_classificacao[classificacao],
+			    "MEDICAMENTOS", "Medicamentos",
+			    "PACOTE", "Pacotes",
+			    "EXAMES", "Exames",
+			    "MATERIAIS", "Materiais",
+			    "HONORÁRIOS MÉDICOS", "Honorários médicos",
+			    "DIÁRIAS/ TAXAS", "Diárias/taxas (internação)",
+			    "CONSULTAS", "Consultas",
+			    "OPME", "OPME",
+			    "N/I", "N/I (sem classificação)",
+			    "TERAPIAS", "Terapias",
+			    "Outros"
+			)
+		dataType: string
+		lineageTag: 6d28fc07-9511-4bad-912d-00e697151858
+		summarizeBy: none
+
+		annotation SummarizationSetBy = Automatic
+
+	partition perfil_despesas_classificacao = m
+		mode: import
+		source =
+				let
+				  Origem = Csv.Document(File.Contents(PastaOutput & "perfil_despesas_classificacao.csv"), [Delimiter = ",", Columns = 4, Encoding = 65001, QuoteStyle = QuoteStyle.None]),
+				  #"Cabeçalhos promovidos" = Table.PromoteHeaders(Origem, [PromoteAllScalars = true]),
+				  #"Tipos alterados" = Table.TransformColumnTypes(#"Cabeçalhos promovidos", {{"Operadora", type text}, {"classificacao", type text}, {"despesa_bruta", type number}, {"participacao_pct", type number}}, "en-US")
+				in
+				  #"Tipos alterados"
+
+	annotation PBI_ResultType = Table
+

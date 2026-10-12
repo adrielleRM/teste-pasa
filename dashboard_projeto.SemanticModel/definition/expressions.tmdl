@@ -1,0 +1,6 @@
+/// Pasta com os CSVs gerados pelo notebook e por scripts/gerar_tabelas_complementares_powerbi.py. Altere aqui para mover o projeto de máquina.
+expression PastaOutput = "C:\Users\adrielle\Git\teste-pasa\output\" meta [IsParameterQuery=true, Type="Text", IsParameterQueryRequired=true]
+	lineageTag: 3c07eb67-2bc0-4ed6-96b9-43efedde6c77
+
+	annotation PBI_ResultType = Text
+

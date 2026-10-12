@@ -1,0 +1,63 @@
+{
+  "name": "PASA",
+  "visualStyles": {
+    "*": {
+      "*": {
+        "background": [
+          {
+            "color": {
+              "solid": {
+                "color": "#F3F6F9"
+              }
+            }
+          }
+        ]
+      }
+    },
+    "page": {
+      "*": {
+        "background": [
+          {
+            "color": {
+              "solid": {
+                "color": "#FAFAFA"
+              }
+            },
+            "transparency": 14
+          }
+        ]
+      }
+    }
+  },
+  "dataColors": [
+    "#5BC0DE",
+    "#F5A623",
+    "#004F71",
+    "#00779E",
+    "#003B5C",
+    "#A9834A",
+    "#7F93A8",
+    "#3FB68B",
+    "#E5484D"
+  ],
+  "foreground": "#1B2E43",
+  "background": "#FFFFFF",
+  "tableAccent": "#004F71",
+  "good": "#3FB68B",
+  "bad": "#E5484D",
+  "neutral": "#F5A623",
+  "textClasses": {
+    "label": {
+      "fontFace": "Segoe UI"
+    },
+    "callout": {
+      "fontFace": "Segoe UI"
+    },
+    "title": {
+      "fontFace": "Segoe UI Semibold"
+    },
+    "header": {
+      "fontFace": "Segoe UI"
+    }
+  }
+}

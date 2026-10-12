@@ -1,0 +1,32 @@
+model Model
+	culture: pt-BR
+	defaultPowerBIDataSourceVersion: powerBI_V3
+	discourageImplicitMeasures
+	sourceQueryCulture: pt-BR
+	valueFilterBehavior: independent
+	dataAccessOptions
+		legacyRedirects
+		returnErrorValuesAsNull
+
+annotation __PBI_TimeIntelligenceEnabled = 0
+
+annotation PBI_QueryOrder = ["PastaOutput","indicadores_mensais","indicadores_periodo","perfil_carteira_faixa_etaria","perfil_despesas_classificacao","perfil_despesas_faixa_etaria","qualidade_dados_financeiros","despesa_vidas_faixa_mensal","migracao_planos_mensal","dOperadora","dFaixaEtaria"]
+
+annotation PBI_ProTooling = ["DevMode"]
+
+ref table indicadores_mensais
+ref table indicadores_periodo
+ref table perfil_carteira_faixa_etaria
+ref table perfil_despesas_classificacao
+ref table perfil_despesas_faixa_etaria
+ref table qualidade_dados_financeiros
+ref table dCalendario
+ref table _Medidas
+ref table dOperadora
+ref table dFaixaEtaria
+ref table despesa_vidas_faixa_mensal
+ref table migracao_planos_mensal
+ref table 'Cenário Sensibilidade'
+
+ref cultureInfo pt-BR
+

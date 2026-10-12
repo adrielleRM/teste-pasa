@@ -1,0 +1,54 @@
+/// Média mensal de vidas por operadora e faixa etária (período). Colunas ocultas: use dOperadora/dFaixaEtaria e as medidas.
+table perfil_carteira_faixa_etaria
+	lineageTag: 1fe5fe7d-fc24-4dde-b23a-1b529c3f5869
+
+	column Operadora
+		dataType: string
+		isHidden
+		lineageTag: a6d3690c-8c61-4e72-babc-858bb8d674d7
+		summarizeBy: none
+		sourceColumn: Operadora
+
+		annotation SummarizationSetBy = Automatic
+
+	column faixa_etaria
+		dataType: string
+		isHidden
+		lineageTag: e356c79e-36e3-4be1-8a0c-ba06443acee8
+		summarizeBy: none
+		sourceColumn: faixa_etaria
+
+		annotation SummarizationSetBy = Automatic
+
+	column media_mensal_vidas
+		dataType: double
+		isHidden
+		formatString: #,0
+		lineageTag: 158a4f3d-1f6f-4575-82ca-efba76e9d8d8
+		summarizeBy: sum
+		sourceColumn: media_mensal_vidas
+
+		annotation SummarizationSetBy = Automatic
+
+	column participacao_pct
+		dataType: double
+		isHidden
+		formatString: 0.00
+		lineageTag: 61d7d4ea-39e2-43a0-9cdf-e4a9e38e33b7
+		summarizeBy: none
+		sourceColumn: participacao_pct
+
+		annotation SummarizationSetBy = User
+
+	partition perfil_carteira_faixa_etaria = m
+		mode: import
+		source =
+				let
+				  Origem = Csv.Document(File.Contents(PastaOutput & "perfil_carteira_faixa_etaria.csv"), [Delimiter = ",", Columns = 4, Encoding = 65001, QuoteStyle = QuoteStyle.None]),
+				  #"Cabeçalhos promovidos" = Table.PromoteHeaders(Origem, [PromoteAllScalars = true]),
+				  #"Tipos alterados" = Table.TransformColumnTypes(#"Cabeçalhos promovidos", {{"Operadora", type text}, {"faixa_etaria", type text}, {"media_mensal_vidas", type number}, {"participacao_pct", type number}}, "en-US")
+				in
+				  #"Tipos alterados"
+
+	annotation PBI_ResultType = Table
+

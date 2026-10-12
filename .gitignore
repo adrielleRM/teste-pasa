@@ -1,0 +1,29 @@
+# Ambiente virtual
+.venv/
+venv/
+env/
+
+# Power BI: versionar o projeto PBIP (dashboard_projeto.*), nunca o binario
+*.pbix
+**/.pbi/localSettings.json
+**/.pbi/cache.abf
+
+# Python / Jupyter
+__pycache__/
+*.py[cod]
+.ipynb_checkpoints/
+
+# Temporarios e sistema
+*.tmp
+*.bak
+~$*
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# IDE
+.vscode/
+.idea/
+
+# Fonte bruta acima do limite de 100 MB do GitHub (952 MB): distribuir fora do Git
+data/Despesa.csv

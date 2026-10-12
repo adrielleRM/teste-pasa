@@ -1,0 +1,76 @@
+/// Fato mensal por operadora x faixa etária (despesa bruta/líquida e vidas). Gerado por scripts/gerar_tabelas_complementares_powerbi.py; base do per capita padronizado por idade e da pirâmide etária.
+table despesa_vidas_faixa_mensal
+	lineageTag: 8997db09-d431-4e18-aeef-45dea7fd241d
+
+	column Operadora
+		dataType: string
+		isHidden
+		lineageTag: 6d543348-a603-4dfe-8902-515b42c62bd5
+		summarizeBy: none
+		sourceColumn: Operadora
+
+		annotation SummarizationSetBy = Automatic
+
+	column data_ref
+		dataType: dateTime
+		isHidden
+		formatString: dd/mm/yyyy
+		lineageTag: 97262562-480a-4369-b752-c07c9aa0910c
+		summarizeBy: none
+		sourceColumn: data_ref
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation UnderlyingDateTimeDataType = Date
+
+	column faixa_etaria
+		dataType: string
+		isHidden
+		lineageTag: 89937af7-6eb4-4faa-8895-fabba4410763
+		summarizeBy: none
+		sourceColumn: faixa_etaria
+
+		annotation SummarizationSetBy = Automatic
+
+	column despesa_bruta
+		dataType: double
+		isHidden
+		formatString: #,0.00
+		lineageTag: c8188a96-277b-4449-b28d-d021dd210a65
+		summarizeBy: sum
+		sourceColumn: despesa_bruta
+
+		annotation SummarizationSetBy = Automatic
+
+	column despesa_liquida
+		dataType: double
+		isHidden
+		formatString: #,0.00
+		lineageTag: 7173fa08-6830-407a-85fb-34d0360828eb
+		summarizeBy: sum
+		sourceColumn: despesa_liquida
+
+		annotation SummarizationSetBy = Automatic
+
+	column vidas
+		dataType: int64
+		isHidden
+		formatString: #,0
+		lineageTag: 16fbbda0-6e22-42ce-8039-b92666301e51
+		summarizeBy: sum
+		sourceColumn: vidas
+
+		annotation SummarizationSetBy = Automatic
+
+	partition despesa_vidas_faixa_mensal = m
+		mode: import
+		source =
+				let
+				  Origem = Csv.Document(File.Contents(PastaOutput & "despesa_vidas_faixa_mensal.csv"), [Delimiter = ",", Columns = 6, Encoding = 65001, QuoteStyle = QuoteStyle.None]),
+				  #"Cabeçalhos promovidos" = Table.PromoteHeaders(Origem, [PromoteAllScalars = true]),
+				  #"Tipos alterados" = Table.TransformColumnTypes(#"Cabeçalhos promovidos", {{"Operadora", type text}, {"data_ref", type date}, {"faixa_etaria", type text}, {"despesa_bruta", type number}, {"despesa_liquida", type number}, {"vidas", Int64.Type}}, "en-US")
+				in
+				  #"Tipos alterados"
+
+	annotation PBI_ResultType = Table
+

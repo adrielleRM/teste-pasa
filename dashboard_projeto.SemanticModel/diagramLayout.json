@@ -1,0 +1,191 @@
+{
+  "version": "1.1.0",
+  "diagrams": [
+    {
+      "ordinal": 0,
+      "scrollPosition": {
+        "x": 0,
+        "y": 0
+      },
+      "nodes": [
+        {
+          "location": {
+            "x": 0,
+            "y": 0
+          },
+          "nodeIndex": "_Medidas",
+          "nodeLineageTag": "8e951f35-6dc7-487a-be91-1ad4c877f79f",
+          "size": {
+            "height": 300,
+            "width": 234
+          },
+          "zIndex": 0
+        },
+        {
+          "location": {
+            "x": 600,
+            "y": 0
+          },
+          "nodeIndex": "dCalendario",
+          "nodeLineageTag": "f98a5bf9-e4cf-4a9e-aabe-7f4795e10fb1",
+          "size": {
+            "height": 300,
+            "width": 234
+          },
+          "zIndex": 1
+        },
+        {
+          "location": {
+            "x": 600,
+            "y": 380
+          },
+          "nodeIndex": "dOperadora",
+          "nodeLineageTag": "226beac0-d501-46fc-a4f3-0a8839e86c55",
+          "size": {
+            "height": 300,
+            "width": 234
+          },
+          "zIndex": 2
+        },
+        {
+          "location": {
+            "x": 600,
+            "y": 760
+          },
+          "nodeIndex": "dFaixaEtaria",
+          "nodeLineageTag": "719e3597-94a4-4032-8e4c-b89d904f8b96",
+          "size": {
+            "height": 300,
+            "width": 234
+          },
+          "zIndex": 3
+        },
+        {
+          "location": {
+            "x": 300,
+            "y": 0
+          },
+          "nodeIndex": "indicadores_mensais",
+          "nodeLineageTag": "b3f25d5a-e725-4bd0-b10d-0efc9d53fe76",
+          "size": {
+            "height": 300,
+            "width": 234
+          },
+          "zIndex": 4
+        },
+        {
+          "location": {
+            "x": 900,
+            "y": 0
+          },
+          "nodeIndex": "migracao_planos_mensal",
+          "nodeLineageTag": "fd4774f7-7950-4f82-b877-1cc3d50519eb",
+          "size": {
+            "height": 300,
+            "width": 234
+          },
+          "zIndex": 5
+        },
+        {
+          "location": {
+            "x": 300,
+            "y": 380
+          },
+          "nodeIndex": "indicadores_periodo",
+          "nodeLineageTag": "1e4c345d-4a0a-45bb-abb6-1b869a493808",
+          "size": {
+            "height": 300,
+            "width": 234
+          },
+          "zIndex": 6
+        },
+        {
+          "location": {
+            "x": 900,
+            "y": 380
+          },
+          "nodeIndex": "qualidade_dados_financeiros",
+          "nodeLineageTag": "523f6164-3f15-4b12-a677-da47d4973d41",
+          "size": {
+            "height": 300,
+            "width": 234
+          },
+          "zIndex": 7
+        },
+        {
+          "location": {
+            "x": 300,
+            "y": 760
+          },
+          "nodeIndex": "perfil_despesas_classificacao",
+          "nodeLineageTag": "07807d1a-dd09-4c78-8757-5a67562b8bfc",
+          "size": {
+            "height": 300,
+            "width": 234
+          },
+          "zIndex": 8
+        },
+        {
+          "location": {
+            "x": 900,
+            "y": 640
+          },
+          "nodeIndex": "despesa_vidas_faixa_mensal",
+          "nodeLineageTag": "8997db09-d431-4e18-aeef-45dea7fd241d",
+          "size": {
+            "height": 300,
+            "width": 234
+          },
+          "zIndex": 9
+        },
+        {
+          "location": {
+            "x": 300,
+            "y": 1100
+          },
+          "nodeIndex": "perfil_carteira_faixa_etaria",
+          "nodeLineageTag": "1fe5fe7d-fc24-4dde-b23a-1b529c3f5869",
+          "size": {
+            "height": 300,
+            "width": 234
+          },
+          "zIndex": 10
+        },
+        {
+          "location": {
+            "x": 900,
+            "y": 1000
+          },
+          "nodeIndex": "perfil_despesas_faixa_etaria",
+          "nodeLineageTag": "ac688fa1-ed21-4df0-ba85-503c05be9e35",
+          "size": {
+            "height": 300,
+            "width": 234
+          },
+          "zIndex": 11
+        },
+        {
+          "location": {
+            "x": 1184,
+            "y": 636
+          },
+          "nodeIndex": "Cenário Sensibilidade",
+          "nodeLineageTag": "7c2e9a41-3b8d-4f16-9e5a-0d4b6c8f2a97",
+          "size": {
+            "height": 128,
+            "width": 234
+          },
+          "zIndex": 0
+        }
+      ],
+      "name": "Todas as tabelas",
+      "zoomValue": 100,
+      "pinKeyFieldsToTop": false,
+      "showExtraHeaderInfo": false,
+      "hideKeyFieldsWhenCollapsed": false,
+      "tablesLocked": false
+    }
+  ],
+  "selectedDiagram": "Todas as tabelas",
+  "defaultDiagram": "Todas as tabelas"
+}

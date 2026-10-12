@@ -1,0 +1,135 @@
+/// Consolidado do período por operadora, exportado pelo notebook (referência de conciliação). Os KPIs do relatório são calculados pelas medidas de _Medidas a partir de indicadores_mensais; esta tabela fica oculta.
+table indicadores_periodo
+	isHidden
+	lineageTag: 1e4c345d-4a0a-45bb-abb6-1b869a493808
+
+	column Operadora
+		dataType: string
+		isHidden
+		lineageTag: f7c9bb32-718a-4195-adfe-04bd43ed9729
+		summarizeBy: none
+		sourceColumn: Operadora
+
+		annotation SummarizationSetBy = Automatic
+
+	column receita_total
+		dataType: double
+		isHidden
+		formatString: #,0.00
+		lineageTag: efb7031b-7853-4613-b4e6-637e0ab576a0
+		summarizeBy: sum
+		sourceColumn: receita_total
+
+		annotation SummarizationSetBy = Automatic
+
+	column despesa_liquida_total
+		dataType: double
+		isHidden
+		formatString: #,0.00
+		lineageTag: 60c255f7-a63e-4e5a-b1cb-895587aef5ca
+		summarizeBy: sum
+		sourceColumn: despesa_liquida_total
+
+		annotation SummarizationSetBy = Automatic
+
+	column media_despesa_liquida
+		dataType: double
+		isHidden
+		formatString: #,0.00
+		lineageTag: 0ce6cb00-7810-42af-8a1f-1e91e6a25ec2
+		summarizeBy: none
+		sourceColumn: media_despesa_liquida
+
+		annotation SummarizationSetBy = User
+
+	column media_vidas
+		dataType: double
+		isHidden
+		formatString: #,0
+		lineageTag: 9d4e93fb-2c41-494a-82da-c3476c9a3905
+		summarizeBy: none
+		sourceColumn: media_vidas
+
+		annotation SummarizationSetBy = User
+
+	column meses_com_receita
+		dataType: int64
+		isHidden
+		formatString: 0
+		lineageTag: 10bf1a54-1468-4c5d-83ba-7dfc7e8d609b
+		summarizeBy: none
+		sourceColumn: meses_com_receita
+
+		annotation SummarizationSetBy = User
+
+	column meses_analisados
+		dataType: int64
+		isHidden
+		formatString: 0
+		lineageTag: 4aff837f-2585-4c58-b055-a5d56a0c45e1
+		summarizeBy: none
+		sourceColumn: meses_analisados
+
+		annotation SummarizationSetBy = User
+
+	column cobertura_receita_completa
+		dataType: boolean
+		isHidden
+		formatString: """TRUE"";""TRUE"";""FALSE"""
+		lineageTag: 888bf636-07f9-4571-b7cf-19f96bbd9784
+		summarizeBy: none
+		sourceColumn: cobertura_receita_completa
+
+		annotation SummarizationSetBy = Automatic
+
+	column sinistralidade_pct
+		dataType: double
+		isHidden
+		formatString: 0.00
+		lineageTag: b4e4f239-3d4b-4078-aef2-7e439ba966a5
+		summarizeBy: none
+		sourceColumn: sinistralidade_pct
+
+		annotation SummarizationSetBy = User
+
+	column roi_pct
+		dataType: double
+		isHidden
+		formatString: 0.00
+		lineageTag: 6ba8a2b1-7f8c-4f79-aeb1-68551621d887
+		summarizeBy: none
+		sourceColumn: roi_pct
+
+		annotation SummarizationSetBy = User
+
+	column custo_per_capita
+		dataType: double
+		isHidden
+		formatString: #,0.00
+		lineageTag: ed28dec9-281f-45c5-91a5-d076b21d5793
+		summarizeBy: none
+		sourceColumn: custo_per_capita
+
+		annotation SummarizationSetBy = User
+
+	column status_receita
+		dataType: string
+		isHidden
+		lineageTag: 9c6b471e-c4c5-4dda-a3c8-6a2aea27a716
+		summarizeBy: none
+		sourceColumn: status_receita
+
+		annotation SummarizationSetBy = Automatic
+
+	partition indicadores_periodo = m
+		mode: import
+		source =
+				let
+				  Origem = Csv.Document(File.Contents(PastaOutput & "indicadores_periodo.csv"), [Delimiter = ",", Columns = 12, Encoding = 65001, QuoteStyle = QuoteStyle.None]),
+				  #"Cabeçalhos promovidos" = Table.PromoteHeaders(Origem, [PromoteAllScalars = true]),
+				  #"O tipo de coluna foi alterado com a localidade" = Table.TransformColumnTypes(#"Cabeçalhos promovidos", {{"custo_per_capita", type number}, {"media_vidas", type number}, {"media_despesa_liquida", type number}, {"despesa_liquida_total", type number}, {"receita_total", type number}, {"sinistralidade_pct", type number}, {"roi_pct", type number}, {"Operadora", type text}, {"meses_com_receita", Int64.Type}, {"meses_analisados", Int64.Type}, {"cobertura_receita_completa", type logical}, {"status_receita", type text}}, "en-US")
+				in
+				  #"O tipo de coluna foi alterado com a localidade"
+
+	annotation PBI_ResultType = Table
+

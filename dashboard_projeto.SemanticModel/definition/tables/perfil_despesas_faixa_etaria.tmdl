@@ -1,0 +1,104 @@
+/// Despesa bruta e vidas do período por operadora e faixa etária (exportado pelo notebook). Para cálculos mensais e despesa líquida use despesa_vidas_faixa_mensal.
+table perfil_despesas_faixa_etaria
+	lineageTag: ac688fa1-ed21-4df0-ba85-503c05be9e35
+
+	column Operadora
+		dataType: string
+		isHidden
+		lineageTag: 0ca5c6b3-bfaa-4b28-917d-ccce6c066e21
+		summarizeBy: none
+		sourceColumn: Operadora
+
+		annotation SummarizationSetBy = Automatic
+
+	column faixa_etaria
+		dataType: string
+		isHidden
+		lineageTag: 9a713d97-79a2-4f97-b5c9-bb54dc2c7c8a
+		summarizeBy: none
+		sourceColumn: faixa_etaria
+
+		annotation SummarizationSetBy = Automatic
+
+	column despesa_bruta_periodo
+		dataType: double
+		isHidden
+		formatString: #,0.00
+		lineageTag: d61cbf40-d68b-4284-818b-0666e2ff2030
+		summarizeBy: sum
+		sourceColumn: despesa_bruta_periodo
+
+		annotation SummarizationSetBy = Automatic
+
+	column media_mensal_vidas
+		dataType: double
+		isHidden
+		formatString: #,0
+		lineageTag: 8fbc8da2-b62f-43cb-a7fc-d5c363f0e9e6
+		summarizeBy: sum
+		sourceColumn: media_mensal_vidas
+
+		annotation SummarizationSetBy = Automatic
+
+	column meses_observados
+		dataType: int64
+		isHidden
+		formatString: 0
+		lineageTag: 33d87bfc-3aaa-4d53-b3bb-c5740b9aa8be
+		summarizeBy: none
+		sourceColumn: meses_observados
+
+		annotation SummarizationSetBy = User
+
+	column despesa_bruta_media_mensal
+		dataType: double
+		isHidden
+		formatString: #,0.00
+		lineageTag: 6e4a06fe-8fbf-495a-a01a-2bb0bf643686
+		summarizeBy: sum
+		sourceColumn: despesa_bruta_media_mensal
+
+		annotation SummarizationSetBy = Automatic
+
+	column despesa_bruta_por_vida
+		dataType: double
+		isHidden
+		formatString: #,0.00
+		lineageTag: 53065e38-99ba-4251-a655-908cf1f21272
+		summarizeBy: none
+		sourceColumn: despesa_bruta_por_vida
+
+		annotation SummarizationSetBy = User
+
+	column participacao_vidas_pct
+		dataType: double
+		isHidden
+		formatString: 0.00
+		lineageTag: c197d5f4-1aef-4d28-97b5-7f74d177c2fb
+		summarizeBy: none
+		sourceColumn: participacao_vidas_pct
+
+		annotation SummarizationSetBy = User
+
+	column participacao_despesa_pct
+		dataType: double
+		isHidden
+		formatString: 0.00
+		lineageTag: 09b253b4-73e1-45b5-b664-da978283aaa7
+		summarizeBy: none
+		sourceColumn: participacao_despesa_pct
+
+		annotation SummarizationSetBy = User
+
+	partition perfil_despesas_faixa_etaria = m
+		mode: import
+		source =
+				let
+				  Origem = Csv.Document(File.Contents(PastaOutput & "perfil_despesas_faixa_etaria.csv"), [Delimiter = ",", Columns = 9, Encoding = 65001, QuoteStyle = QuoteStyle.None]),
+				  #"Cabeçalhos promovidos" = Table.PromoteHeaders(Origem, [PromoteAllScalars = true]),
+				  #"O tipo de coluna foi alterado com a localidade" = Table.TransformColumnTypes(#"Cabeçalhos promovidos", {{"despesa_bruta_periodo", type number}, {"media_mensal_vidas", type number}, {"despesa_bruta_media_mensal", type number}, {"despesa_bruta_por_vida", type number}, {"participacao_vidas_pct", type number}, {"participacao_despesa_pct", type number}, {"Operadora", type text}, {"faixa_etaria", type text}, {"meses_observados", Int64.Type}}, "en-US")
+				in
+				  #"O tipo de coluna foi alterado com a localidade"
+
+	annotation PBI_ResultType = Table
+

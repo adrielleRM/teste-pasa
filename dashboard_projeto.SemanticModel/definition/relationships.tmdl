@@ -1,0 +1,56 @@
+relationship a99cbef6-5c10-4d42-badd-dcc42046d6f9
+	fromColumn: indicadores_mensais.data_ref
+	toColumn: dCalendario.Date
+
+relationship bb612b20-885e-4b3c-8f70-4bd9cfe260bd
+	fromColumn: indicadores_mensais.Operadora
+	toColumn: dOperadora.Operadora
+
+relationship f8468514-e30c-446c-bb0c-598f5710f15d
+	fromColumn: indicadores_periodo.Operadora
+	toColumn: dOperadora.Operadora
+
+relationship afc48f55-0918-451e-9ae3-7dd0179a1802
+	fromColumn: despesa_vidas_faixa_mensal.data_ref
+	toColumn: dCalendario.Date
+
+relationship 9f540bbf-7c72-4593-843e-7a2428644dfc
+	fromColumn: despesa_vidas_faixa_mensal.Operadora
+	toColumn: dOperadora.Operadora
+
+relationship fab8ae72-999c-441b-b400-9bee6028d0b8
+	fromColumn: despesa_vidas_faixa_mensal.faixa_etaria
+	toColumn: dFaixaEtaria.'Faixa Etária'
+
+relationship 32df4593-cd2f-48d3-a59a-4a712b057490
+	fromColumn: migracao_planos_mensal.data_ref
+	toColumn: dCalendario.Date
+
+relationship 8e9ecd3f-3283-4b5f-8b0f-fa389741d252
+	fromColumn: migracao_planos_mensal.Operadora
+	toColumn: dOperadora.Operadora
+
+relationship 1020f92d-814b-42df-8ec8-95c7af39b17e
+	fromColumn: perfil_carteira_faixa_etaria.Operadora
+	toColumn: dOperadora.Operadora
+
+relationship 0932b88e-15c6-4788-b84b-ce32f0ce7378
+	fromColumn: perfil_carteira_faixa_etaria.faixa_etaria
+	toColumn: dFaixaEtaria.'Faixa Etária'
+
+relationship da8ced7d-057e-4a30-94b3-4ff1fae54b8a
+	fromColumn: perfil_despesas_faixa_etaria.Operadora
+	toColumn: dOperadora.Operadora
+
+relationship c571b0eb-b225-4f63-bcbe-e9a901906910
+	fromColumn: perfil_despesas_faixa_etaria.faixa_etaria
+	toColumn: dFaixaEtaria.'Faixa Etária'
+
+relationship 620d0731-305a-41d8-837a-bc3cd3788009
+	fromColumn: perfil_despesas_classificacao.Operadora
+	toColumn: dOperadora.Operadora
+
+relationship 2cdf634a-8118-48ad-a67b-8672fc52bbde
+	fromColumn: qualidade_dados_financeiros.Operadora
+	toColumn: dOperadora.Operadora
+

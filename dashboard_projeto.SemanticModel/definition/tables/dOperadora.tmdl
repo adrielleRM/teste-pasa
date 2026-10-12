@@ -1,0 +1,55 @@
+/// Dimensão de operadoras (chave: Operadora). Fonte: indicadores_periodo.csv, que tem uma linha por operadora.
+table dOperadora
+	lineageTag: 226beac0-d501-46fc-a4f3-0a8839e86c55
+
+	column Operadora
+		dataType: string
+		isKey
+		lineageTag: 4a219693-8239-4412-a86d-92ff1333cbfb
+		summarizeBy: none
+		sourceColumn: Operadora
+		sortByColumn: 'Ordem Operadora'
+
+		annotation SummarizationSetBy = Automatic
+
+	column Sigla
+		dataType: string
+		lineageTag: 2c5c888a-6633-40be-b77f-a64f9a0fd99b
+		summarizeBy: none
+		sourceColumn: Sigla
+
+		annotation SummarizationSetBy = Automatic
+
+	/// Situação da base de receita no período (ex.: 'Ausente na base fornecida' para a Operadora X).
+	column 'Status Receita'
+		dataType: string
+		lineageTag: d3c898da-ae42-4421-9c6f-0430bee3fc3c
+		summarizeBy: none
+		sourceColumn: status_receita
+
+		annotation SummarizationSetBy = Automatic
+
+	column 'Ordem Operadora'
+		dataType: int64
+		isHidden
+		formatString: 0
+		lineageTag: 3b0c8a9c-ec5c-41d3-a9e1-80b6d65fdb9d
+		summarizeBy: none
+		sourceColumn: Ordem Operadora
+
+		annotation SummarizationSetBy = User
+
+	partition dOperadora = m
+		mode: import
+		source =
+				let
+				  Fonte = Table.SelectColumns(indicadores_periodo, {"Operadora", "status_receita"}),
+				  Distintas = Table.Distinct(Fonte, {"Operadora"}),
+				  Ordenadas = Table.Sort(Distintas, {{"Operadora", Order.Ascending}}),
+				  ComSigla = Table.AddColumn(Ordenadas, "Sigla", each Text.AfterDelimiter([Operadora], " ", {0, RelativePosition.FromEnd}), type text),
+				  ComOrdem = Table.AddIndexColumn(ComSigla, "Ordem Operadora", 1, 1, Int64.Type)
+				in
+				  ComOrdem
+
+	annotation PBI_ResultType = Table
+

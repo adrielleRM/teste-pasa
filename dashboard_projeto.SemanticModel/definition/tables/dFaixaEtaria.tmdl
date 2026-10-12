@@ -1,0 +1,46 @@
+/// Dimensão de faixas etárias, ordenada pela idade inicial da faixa. Fonte: perfil_carteira_faixa_etaria.csv.
+table dFaixaEtaria
+	lineageTag: 719e3597-94a4-4032-8e4c-b89d904f8b96
+
+	column 'Faixa Etária'
+		dataType: string
+		isKey
+		lineageTag: 41884cba-707a-47c6-bfc6-0ac8c34d575f
+		summarizeBy: none
+		sourceColumn: faixa_etaria
+		sortByColumn: 'Ordem Faixa'
+
+		annotation SummarizationSetBy = Automatic
+
+	/// Agrupamento usado para destacar a concentração de idosos ('59+') na Operadora Y.
+	column 'Grupo Etário'
+		dataType: string
+		lineageTag: 9e860b9b-a95e-4321-8327-9afa17f92d83
+		summarizeBy: none
+		sourceColumn: Grupo Etário
+
+		annotation SummarizationSetBy = Automatic
+
+	column 'Ordem Faixa'
+		dataType: int64
+		isHidden
+		formatString: 0
+		lineageTag: 6488d5f8-0dcb-4622-8051-3fd32f3dee17
+		summarizeBy: none
+		sourceColumn: Ordem Faixa
+
+		annotation SummarizationSetBy = User
+
+	partition dFaixaEtaria = m
+		mode: import
+		source =
+				let
+				  Fonte = Table.SelectColumns(perfil_carteira_faixa_etaria, {"faixa_etaria"}),
+				  Distintas = Table.Distinct(Table.TransformColumnTypes(Fonte, {{"faixa_etaria", type text}})),
+				  ComOrdem = Table.AddColumn(Distintas, "Ordem Faixa", each Number.From(Text.BeforeDelimiter([faixa_etaria], " ")), Int64.Type),
+				  ComGrupo = Table.AddColumn(ComOrdem, "Grupo Etário", each if [Ordem Faixa] >= 59 then "59+" else "0 a 58", type text)
+				in
+				  ComGrupo
+
+	annotation PBI_ResultType = Table
+

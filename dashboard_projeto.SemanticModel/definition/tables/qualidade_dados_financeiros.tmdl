@@ -1,0 +1,125 @@
+/// Registros de despesa em que a coparticipação supera o valor bruto (despesa líquida negativa), por operadora.
+table qualidade_dados_financeiros
+	lineageTag: 523f6164-3f15-4b12-a677-da47d4973d41
+
+	column Operadora
+		dataType: string
+		isHidden
+		lineageTag: 631e98e9-37cc-432f-ab2b-6db50c9e897c
+		summarizeBy: none
+		sourceColumn: Operadora
+
+		annotation SummarizationSetBy = Automatic
+
+	column registros
+		dataType: int64
+		isHidden
+		formatString: #,0
+		lineageTag: f47628fd-2453-42e9-8817-4655dbeb2978
+		summarizeBy: sum
+		sourceColumn: registros
+
+		annotation SummarizationSetBy = Automatic
+
+	column ocorrencias
+		dataType: int64
+		isHidden
+		formatString: #,0
+		lineageTag: 009c0259-c5cd-451b-90a5-9262fb9194dc
+		summarizeBy: sum
+		sourceColumn: ocorrencias
+
+		annotation SummarizationSetBy = Automatic
+
+	column valor_bruto_nas_ocorrencias
+		dataType: double
+		isHidden
+		formatString: #,0.00
+		lineageTag: 5d0f7bfb-0d5e-45df-9384-c4484272bc1d
+		summarizeBy: sum
+		sourceColumn: valor_bruto_nas_ocorrencias
+
+		annotation SummarizationSetBy = Automatic
+
+	column coparticipacao_nas_ocorrencias
+		dataType: double
+		isHidden
+		formatString: #,0.00
+		lineageTag: a5861f4e-b9a1-4c99-a817-d3ff6547fd61
+		summarizeBy: sum
+		sourceColumn: coparticipacao_nas_ocorrencias
+
+		annotation SummarizationSetBy = Automatic
+
+	column saldo_estimado_nas_ocorrencias
+		dataType: double
+		isHidden
+		formatString: #,0.00
+		lineageTag: 031a8916-5230-4d0d-bf8d-80a44f42b044
+		summarizeBy: sum
+		sourceColumn: saldo_estimado_nas_ocorrencias
+
+		annotation SummarizationSetBy = Automatic
+
+	column despesa_bruta_total
+		dataType: double
+		isHidden
+		formatString: #,0.00
+		lineageTag: 7a0e7149-a4ca-445a-b124-c890dc01c5f5
+		summarizeBy: sum
+		sourceColumn: despesa_bruta_total
+
+		annotation SummarizationSetBy = Automatic
+
+	column coparticipacao_total
+		dataType: double
+		isHidden
+		formatString: #,0.00
+		lineageTag: 6055c5d4-5131-4daf-9bfe-4a86d80d0f6e
+		summarizeBy: sum
+		sourceColumn: coparticipacao_total
+
+		annotation SummarizationSetBy = Automatic
+
+	column despesa_liquida_estimada_total
+		dataType: double
+		isHidden
+		formatString: #,0.00
+		lineageTag: 1e75cdb7-f15a-4242-a873-bb31829c1efe
+		summarizeBy: sum
+		sourceColumn: despesa_liquida_estimada_total
+
+		annotation SummarizationSetBy = Automatic
+
+	column registros_liquidos_negativos
+		dataType: int64
+		isHidden
+		formatString: #,0
+		lineageTag: 3077943c-bb03-49f7-b661-7d168de6de52
+		summarizeBy: sum
+		sourceColumn: registros_liquidos_negativos
+
+		annotation SummarizationSetBy = Automatic
+
+	column percentual_ocorrencias
+		dataType: double
+		isHidden
+		formatString: 0.00
+		lineageTag: 345be500-f987-41f4-9a18-855031969c3e
+		summarizeBy: none
+		sourceColumn: percentual_ocorrencias
+
+		annotation SummarizationSetBy = User
+
+	partition qualidade_dados_financeiros = m
+		mode: import
+		source =
+				let
+				  Origem = Csv.Document(File.Contents(PastaOutput & "qualidade_dados_financeiros.csv"), [Delimiter = ",", Columns = 11, Encoding = 65001, QuoteStyle = QuoteStyle.None]),
+				  #"Cabeçalhos promovidos" = Table.PromoteHeaders(Origem, [PromoteAllScalars = true]),
+				  #"Tipos alterados" = Table.TransformColumnTypes(#"Cabeçalhos promovidos", {{"Operadora", type text}, {"registros", Int64.Type}, {"ocorrencias", Int64.Type}, {"valor_bruto_nas_ocorrencias", type number}, {"coparticipacao_nas_ocorrencias", type number}, {"saldo_estimado_nas_ocorrencias", type number}, {"despesa_bruta_total", type number}, {"coparticipacao_total", type number}, {"despesa_liquida_estimada_total", type number}, {"registros_liquidos_negativos", Int64.Type}, {"percentual_ocorrencias", type number}}, "en-US")
+				in
+				  #"Tipos alterados"
+
+	annotation PBI_ResultType = Table
+

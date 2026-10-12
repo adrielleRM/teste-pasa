@@ -1,0 +1,3 @@
+﻿Operadora,receita_total,despesa_liquida_total,media_despesa_liquida,media_vidas,meses_com_receita,meses_analisados,cobertura_receita_completa,sinistralidade_pct,roi_pct,custo_per_capita,status_receita
+Operadora X,,593156526.13,49429710.51083333,397367.5,0,12,False,,,124.39293729566039,Ausente na base fornecida
+Operadora Y,757259505.3749999,258625777.54999998,21552148.129166666,82404.83333333333,12,12,True,34.15285984715726,192.8012484094318,261.53985461006533,Completa no período

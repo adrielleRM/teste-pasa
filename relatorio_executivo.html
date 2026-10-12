@@ -1,0 +1,847 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>PASA · Dashboard Executivo — Operadoras X e Y</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<style>
+  :root {
+    --bg: #0B1E2D;
+    --card: #162638;
+    --card-2: #1B2E43;
+    --border: #22384E;
+    --pasa-blue: #004F71;
+    --pasa-blue-2: #00779E;
+    --accent: #F5A623;
+    --serie-x: #2E9CCB;   /* Operadora X — azul PASA claro (validado p/ fundo escuro) */
+    --serie-y: #CC820A;   /* Operadora Y — dourado PASA (validado p/ fundo escuro) */
+    --neutral: #7F93A8;
+    --ink: #EAF1F7;
+    --ink-2: #B4C4D4;
+    --ink-3: #8399AE;
+    --critical: #E5484D;
+    --good: #3FB68B;
+    --radius: 12px;
+    --font: "Segoe UI", Inter, Roboto, system-ui, -apple-system, sans-serif;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; background: var(--bg); color: var(--ink); font-family: var(--font); font-size: 15px; line-height: 1.5; }
+  body { min-height: 100vh; }
+  a { color: var(--serie-x); }
+  .wrap { max-width: 1440px; margin: 0 auto; padding: 0 24px 40px; }
+
+  /* Cabeçalho */
+  header.top { position: sticky; top: 0; z-index: 20; background: rgba(11,30,45,.94); backdrop-filter: blur(8px); border-bottom: 1px solid var(--border); }
+  .top-inner { max-width: 1440px; margin: 0 auto; padding: 14px 24px 0; }
+  .brand { display: flex; align-items: center; gap: 18px; flex-wrap: wrap; }
+  .logo { background: #fff; border-radius: 10px; padding: 6px 12px; display: flex; align-items: center; }
+  .logo img { height: 34px; display: block; }
+  .brand h1 { font-size: 20px; margin: 0; font-weight: 600; letter-spacing: .2px; }
+  .brand .sub { color: var(--ink-3); font-size: 13px; }
+  .brand .meta { margin-left: auto; display: flex; gap: 8px; flex-wrap: wrap; }
+  .chip { border: 1px solid var(--border); background: var(--card); color: var(--ink-2); border-radius: 999px; padding: 4px 12px; font-size: 12.5px; white-space: nowrap; }
+  .chip i { color: var(--accent); margin-right: 4px; }
+
+  nav.tabs { display: flex; gap: 4px; margin-top: 14px; overflow-x: auto; scrollbar-width: none; }
+  nav.tabs button { background: none; border: 0; color: var(--ink-3); font: inherit; font-size: 14px; font-weight: 600; padding: 10px 16px 12px; cursor: pointer; border-bottom: 3px solid transparent; white-space: nowrap; transition: color .15s, border-color .15s; }
+  nav.tabs button:hover { color: var(--ink); }
+  nav.tabs button[aria-selected="true"] { color: var(--ink); border-bottom-color: var(--accent); }
+  nav.tabs button i { margin-right: 6px; }
+  nav.tabs .num { display: inline-block; width: 20px; height: 20px; line-height: 20px; text-align: center; border-radius: 50%; background: var(--card); border: 1px solid var(--border); font-size: 11px; margin-right: 6px; }
+  nav.tabs button[aria-selected="true"] .num { background: var(--accent); color: #0B1E2D; border-color: var(--accent); }
+
+  section.tab { display: none; padding-top: 24px; animation: fade .25s ease; }
+  section.tab.active { display: block; }
+  @keyframes fade { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: none; } }
+
+  .section-title { display: flex; align-items: baseline; gap: 12px; margin: 0 0 16px; flex-wrap: wrap; }
+  .section-title h2 { font-size: 22px; margin: 0; font-weight: 600; }
+  .section-title p { margin: 0; color: var(--ink-3); font-size: 14px; }
+
+  /* Grids */
+  .grid { display: grid; gap: 16px; }
+  .kpis { grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); margin-bottom: 16px; }
+  .g-2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .g-3-2 { grid-template-columns: 3fr 2fr; }
+  .g-2-1 { grid-template-columns: 2fr 1fr; }
+  @media (max-width: 1100px) { .g-2, .g-3-2, .g-2-1 { grid-template-columns: 1fr; } }
+
+  .card { background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); padding: 18px 20px; min-width: 0; }
+  .card h3 { margin: 0; font-size: 15.5px; font-weight: 600; }
+  .card .desc { color: var(--ink-3); font-size: 13px; margin: 2px 0 0; }
+  .card-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; margin-bottom: 12px; }
+
+  /* KPI */
+  .kpi { position: relative; overflow: hidden; }
+  .kpi::before { content: ""; position: absolute; left: 0; top: 0; bottom: 0; width: 3px; background: var(--pasa-blue-2); }
+  .kpi.hl::before { background: var(--accent); }
+  .kpi .label { color: var(--ink-3); font-size: 12px; text-transform: uppercase; letter-spacing: .6px; font-weight: 600; display: flex; align-items: center; gap: 6px; }
+  .kpi .rows { margin-top: 10px; display: grid; gap: 6px; }
+  .kpi .row { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; }
+  .kpi .who { white-space: nowrap; color: var(--ink-2); font-size: 13px; display: flex; align-items: center; gap: 6px; }
+  .kpi .val { white-space: nowrap; font-size: 21px; font-weight: 700; font-variant-numeric: tabular-nums; letter-spacing: -.3px; }
+  .kpi .big { font-size: 34px; font-weight: 700; font-variant-numeric: tabular-nums; letter-spacing: -.5px; margin-top: 6px; line-height: 1.1; }
+  .kpi .foot { margin-top: 10px; font-size: 12.5px; color: var(--ink-3); }
+  .kpi .na { color: var(--ink-3); font-size: 14px; font-style: italic; }
+  .dot { width: 9px; height: 9px; border-radius: 50%; display: inline-block; flex: none; }
+  .dot.x { background: var(--serie-x); } .dot.y { background: var(--serie-y); }
+  .tag { display: inline-flex; align-items: center; gap: 4px; font-size: 11.5px; font-weight: 600; padding: 2px 8px; border-radius: 999px; border: 1px solid; }
+  .tag.warn { color: var(--accent); border-color: rgba(245,166,35,.45); background: rgba(245,166,35,.08); }
+  .tag.crit { color: #FF8A8E; border-color: rgba(229,72,77,.45); background: rgba(229,72,77,.08); }
+  .tag.ok { color: #7FD9B4; border-color: rgba(63,182,139,.45); background: rgba(63,182,139,.08); }
+  .tag.info { color: #8FD0EC; border-color: rgba(46,156,203,.45); background: rgba(46,156,203,.08); }
+
+  /* Banners */
+  .banner { display: flex; gap: 14px; align-items: flex-start; border-radius: var(--radius); padding: 14px 18px; border: 1px solid rgba(245,166,35,.5); background: linear-gradient(90deg, rgba(245,166,35,.12), rgba(245,166,35,.03)); margin-bottom: 16px; }
+  .banner > i { color: var(--accent); font-size: 22px; line-height: 1; margin-top: 2px; }
+  .banner strong { color: var(--ink); }
+  .banner p { margin: 2px 0 0; color: var(--ink-2); font-size: 14px; }
+  .banner.info { border-color: rgba(46,156,203,.45); background: linear-gradient(90deg, rgba(46,156,203,.12), rgba(46,156,203,.02)); }
+  .banner.info > i { color: var(--serie-x); }
+
+  /* Charts */
+  .chart-box { position: relative; height: 320px; }
+  .chart-box.tall { height: 400px; }
+  .chart-box.short { height: 220px; }
+  .legend { display: flex; gap: 16px; flex-wrap: wrap; font-size: 13px; color: var(--ink-2); margin-bottom: 8px; }
+  .legend span { display: inline-flex; align-items: center; gap: 6px; }
+  .legend .sw { width: 12px; height: 12px; border-radius: 3px; display: inline-block; }
+  .legend .ln { width: 16px; height: 0; border-top: 2px dashed var(--ink-3); display: inline-block; }
+
+  .tools { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; }
+  .seg { display: inline-flex; border: 1px solid var(--border); border-radius: 8px; overflow: hidden; }
+  .seg button, .btn-ghost { background: var(--card-2); color: var(--ink-2); border: 0; font: inherit; font-size: 12.5px; padding: 5px 11px; cursor: pointer; }
+  .seg button + button { border-left: 1px solid var(--border); }
+  .seg button[aria-pressed="true"] { background: var(--pasa-blue); color: #fff; }
+  .btn-ghost { border: 1px solid var(--border); border-radius: 8px; }
+  .btn-ghost:hover, .seg button:hover { color: var(--ink); }
+
+  table.data { width: 100%; border-collapse: collapse; font-size: 13px; font-variant-numeric: tabular-nums; }
+  table.data th, table.data td { padding: 7px 10px; border-bottom: 1px solid var(--border); text-align: right; }
+  table.data th:first-child, table.data td:first-child { text-align: left; }
+  table.data th { color: var(--ink-3); font-weight: 600; font-size: 12px; text-transform: uppercase; letter-spacing: .4px; position: sticky; top: 0; background: var(--card); }
+  .table-view { max-height: 400px; overflow: auto; display: none; }
+  .card.show-table .table-view { display: block; }
+  .card.show-table .chart-box, .card.show-table .legend { display: none; }
+
+  /* Storytelling */
+  .story { border-left: 3px solid var(--accent); background: var(--card-2); border-radius: 0 var(--radius) var(--radius) 0; padding: 16px 18px; }
+  .story h4 { margin: 0 0 8px; font-size: 15px; display: flex; align-items: center; gap: 8px; }
+  .story h4 i { color: var(--accent); }
+  .story p, .story li { color: var(--ink-2); font-size: 14px; margin: 6px 0; }
+  .story ul { padding-left: 18px; margin: 6px 0; }
+  .story b { color: var(--ink); }
+  .em-x { color: #8FD0EC; font-weight: 700; }
+  .em-y { color: #F2B451; font-weight: 700; }
+
+  .stat-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; }
+  .stat { background: var(--card-2); border: 1px solid var(--border); border-radius: 10px; padding: 12px 14px; }
+  .stat .n { font-size: 24px; font-weight: 700; font-variant-numeric: tabular-nums; line-height: 1.15; }
+  .stat .t { font-size: 12.5px; color: var(--ink-3); margin-top: 4px; }
+  .stat .n small { font-size: 14px; color: var(--ink-3); font-weight: 600; }
+  .arrow { color: var(--ink-3); margin: 0 4px; }
+
+  /* Tabela de evidências */
+  .ev-table { width: 100%; border-collapse: separate; border-spacing: 0; font-size: 13.5px; }
+  .ev-table th { text-align: left; color: var(--ink-3); font-size: 12px; text-transform: uppercase; letter-spacing: .5px; padding: 10px 12px; border-bottom: 1px solid var(--border); background: var(--card); position: sticky; top: 0; }
+  .ev-table th i { margin-right: 4px; }
+  .ev-table th.ev i { color: var(--serie-x); } .ev-table th.ri i { color: var(--critical); } .ev-table th.re i { color: var(--good); }
+  .ev-table td { padding: 14px 12px; border-bottom: 1px solid var(--border); vertical-align: top; color: var(--ink-2); }
+  .ev-table td b { color: var(--ink); }
+  .ev-table tr:hover td { background: rgba(255,255,255,.02); }
+  .ev-table .n { width: 44px; }
+  .ev-table .n span { display: inline-flex; width: 28px; height: 28px; align-items: center; justify-content: center; border-radius: 8px; background: var(--pasa-blue); color: #fff; font-weight: 700; }
+  .ev-table .theme { display: block; font-size: 11.5px; color: var(--accent); font-weight: 700; text-transform: uppercase; letter-spacing: .5px; margin-bottom: 4px; }
+  .ev-wrap { overflow-x: auto; }
+  @media (max-width: 900px) { .ev-table { min-width: 860px; } }
+
+  .anomaly .big-n { font-size: 40px; font-weight: 700; line-height: 1; font-variant-numeric: tabular-nums; }
+  .split { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 14px; }
+  .bar-mini { height: 8px; border-radius: 4px; background: var(--card-2); overflow: hidden; margin-top: 6px; }
+  .bar-mini > div { height: 100%; border-radius: 4px; }
+
+  .prio { counter-reset: p; list-style: none; padding: 0; margin: 0; display: grid; gap: 8px; }
+  .prio li { display: flex; gap: 10px; color: var(--ink-2); font-size: 13.5px; }
+  .prio li::before { counter-increment: p; content: counter(p); flex: none; width: 22px; height: 22px; border-radius: 6px; background: var(--card-2); border: 1px solid var(--border); font-size: 12px; font-weight: 700; display: flex; align-items: center; justify-content: center; color: var(--accent); }
+  .prio b { color: var(--ink); }
+  .prio-h { font-size: 12px; text-transform: uppercase; letter-spacing: .6px; color: var(--ink-3); font-weight: 700; margin: 14px 0 8px; }
+  .prio-h:first-child { margin-top: 0; }
+
+  footer { color: var(--ink-3); font-size: 12.5px; border-top: 1px solid var(--border); margin-top: 32px; padding-top: 16px; display: flex; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+  .mt { margin-top: 16px; }
+  code { background: var(--card-2); border: 1px solid var(--border); border-radius: 4px; padding: 0 5px; font-size: 12.5px; color: var(--ink); }
+
+  .cdn-error { display: none; margin: 16px 0; }
+  @media print {
+    header.top { position: static; }
+    section.tab { display: block !important; page-break-after: always; }
+    nav.tabs, .tools { display: none; }
+  }
+</style>
+</head>
+<body>
+
+<header class="top">
+  <div class="top-inner">
+    <div class="brand">
+      <div class="logo"><img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAPAAAABsCAYAAABU8T+qAAAqrUlEQVR42u19Z3hd1ZX2+659zr2SZVuW3DDdYEwJvRPDUELAYMlggiAMNckMSQDbkAzJNyGJx5nMl0m+JGCDgZBAhhQCOHRc6JgWCJA6IaF3Y1vNslXvPXut78e56le2JF/Zxjrv85znylfyKfusd6+1116F2IZQttuJpamw5SCS/0TyMCOnGjkR5ChQBBSA9EZpgMhKUl4zyst08lxrEf7UsOK+tUiQ4GMEfuyf4Nhjg4mrsseI2VkgTwQxGRI4I2EkcqTNHdJ5iHT8zmDeKO9S5GmQ93hkH6997v71iXgkSAg8RJgyZXq6UdZVmemlanKkMoAaoSCsCzkpAucAJ4S4mMjWjdQEkCO0OACAAa8b5BdmuKX2udtXJmKSICFwATFu8lEV3vgtiBw+skgxqSyDnca3YVJZBmUlEUrSHhnv0NCSwprGInxQPwIfNIxAbXMRsuYQOkPg0KGVrYPIuU9xgDiY6UqDLAjSWLT6kV81JeKSICHwJqB4p09uLybfKxsZXXDolCacuF8tjpiyDjuPbcHIIo9AujyQAWaAV6A141DdmMY/Vo3G029NwIq3JuKN2tHwEKQCA3sQ2LqY3HQOZvYS1a6oXvHLZxKRSZAQeDAoO+7kydu3XH/a4XW7nfPJVdh3p/VIBUAUxST11k5cdhI49wkQAoOjQQyoa07huXcm4Nd/3g1Pv7sdvDmETjvXzEA3QudI3AKzq2qe+MXVidgkSAg8gFsctcu0K844ouZ7c0/5IL3vjo1QA7JRV4J2fOQlsBk7NDKUIAwhDZlI8ORbk/CD5/bH/9aMRVHguxAXnSY1CAjbzepra7M7fwUr5keJ+CRICLxBGI+Yduj355zywZVnHL4GhCHTkzaDILAZYEpAgRQVNU1F+M4zB+Ou13ZDylmOs+zQxNZBaAGDAOb9zbVl676IxYt9IkIJtiTc1kzeS87f8+r/PPudrxy3dz0yOVO5P3MSCYQOCAMgFQChIwIHBA5IOSKQmOhqQCYSFDuPE3f+EI3ZNF5aMwGB5PNWty+wDQzCg4taikpa3nr54USEEiQaOM9t3TRv++/OPLj6qjHFmd5aN48GBmPCBiSa2xCZ4m0Qr0DxupEr4bHeFCk1GQ/YnlAcDOOeKSFa2wjzgHni3585Ene+OSU2p5HPnEZue8rBa3Rx/cM/+2kiRgkSAnfBR/fK50ekcHPoFJHf+AMUpYCWDIzECwTuhscjJc14lWehpU/e34niagSHM8KFplIVCkdmWoH1rSEueuxE/LluHFJOuxO442fEGtmwzoscs3b5DX9JRClBQmAA9ctwXFqwBMCIjZG3KAVks8gacK8aFo1qxDM8CwNel666JdyPTuaLcRa94oWVE/H5p09ERh2kg7DsPmQE6EKo+ifrdtaTcNNN2UScEgxrAq9/FBORwXNhiN0yG6CDk9hczmTxhEaYN7oSTxfi+h/+NDWHcD9Imaa/+eKR+OWbe+dM6e7E7aqN6QKojy6qW37jrYk4JdjckK3pZnwbvj+iaMPkTYcAiHVtWVxeUoSTCkVeANjhXzMLMxHO88qWC3Z/FeXpNqh1MZ27Rmu1O7vNAOAb46suGZmIU4JhS+D6pfhUKsR5zW19/01xGvCKV2D49KhTsIDHo+B7sbt+ueW3LVmZM2VUgx0/8QNkzPUgbldTmoApJAin+kZWJeKUYFgS2J5AIIb/CATOLP/fjEgDbRk81ZzBSSXT8fuhvJ9dZzf/TCN/6+k7vxtvOXX1QHcsgLuY0waY6Rdx7LwgEakEw47A6xpxUirE0W2ZvjVvawaPRx6nj6vEh5vjnpxkrtq9uGb1LiVN8B3D1GNbKWdHqyko7tDykbUHJyKVYNgRmA6XBNIlmgrdPc2tbXhZszh7TAXqN9c9jZ+NlePD5hsOLK9FZNJ7HdwRbsLcMzhnarMSkUowrAi87n7sReKEtjyOqzAAMhFWqsc5o2eiZnPf26SxrbfumKpbT+mqdTuJa13MajMDyJMSMzrB8NLAAU4vTqNYe6hfxktLn4lwSWklXt8St+Y+h3dGSvRMUdBJ3p7E7TCtzQDY3qOL63ZJxCrBsCCwzYOYosJHuZDILkdxCshm8NPyCty3pe5PAUTGR4qch6EP4nZoZYO4oDigHpiIVYJhQeCWw7ATiQOyPWKnQge0tOF9acO8LT1AtVHJyzDfg7xdiNuVwxQYJCFwguFB4MjhkFSIkV67K2DnAK/471GfwZotPUBvNJZ90BZJM3sGr3XzZXUltO2ViFWCYUFgVRzppLfjqrkNr5WG2CpCE59fM6k1Msl08z4zfzRqzpG10zZR7TNBQuCNgcb9VRkn4eeOQAgCN/JkbBVF5CIXpIwMNqh1OxkMwsbtWHVFUSJaCbZpAr/9cxSZYXLXJH0nQEsr6tocbt9qBkiiUQSK8zuukC89eeS6hq5/nyDBNkjgkWUoJzFBuxA4Feu55RNOwUfYetK1toPkCkZvzDKmgWQqVWLpRLQSbNMELkphnBlGqXZ6r1QB0u7amgbIHHanuI0nZXbuJtF8NlkDJ9i2CRwpxrYnLxjixggtGdTR49mtaYCockC/iLsR0zpBgm2KwM4wxkl7ABMQxD//edRpWL3VjM68eWLAwZYvRapv4kZhRpLqHAm2cQ0cYaSg03x2AtDw/NY0OGNerN4JxD4w3YDW7cXq5uy6otZEtBJgs0QibynTlFKUK9ccE9oDcPwDsDWVWpZjRNxIU9/n3m8erdxQu8M7zYloJdimNbACrl37EkBrBt7gX9+aBofk6V3L52xsnUsQRqxKCr4nGB7JDLluCbl66WszilVby8CUz7hiBxInmPn+O6hIEHw7EasE2zyBBWhDbgtJAJiifuJoNGw9Q+PPpAvLYAPcNTa8kohVgm1+DayGZrW4T1FOHdfjOLRtFaNy7IVFIL5gZgOzKNSDon9NxCrBNk9gGNf5KF4MMzalW8iB6bshM59HjqmkyH6mfiALZsC0XlQTDZxgGKyBPRuiKE5gMCPMZOvQvlXzUga9EgP3qgNmf6teev3qRKwSbPMENpO13iMLQ7zNaltHGNOYlrqzxQWHDUj7diTz2+PA1mFFJEgIPLRoc+tM2QLkNLDnFk/BKz1t7hgxftsGwUHzkae5pYlIJRgWBG6SliYzNMEA9YCZlZht2W0t8fY1BuEUqA7wPzrA9G91JSv/mIhUgmFB4LYaNJthHYxQT6iidOVNKNpy+76XHU7wctNoMAEfMPDXWLw4k4hUgmFB4KlzkTHPehjgPQAvpVKMLdIgbFLFxSMMvI4ixRjg1hFImI/q6O22RJwSDKdILDNjLXMa2IyjzFJjt4g1YEXzJUgN3HEFgBLAzG6tW37tB4k4JRheoZSe1dCYwA5MqXL7zX0PYyvmng6RK8xHgwmWhvlsLYLw6kSUEgxHAq8ynyMwCc1i181L3sv2MuBGAG4wuz+x9sUP6u/78fuJKCUYhgTGKvWxFxoegMmUzXXt0hlfLlPIryhuYrd83343ZAugUeaFkhHu2kSMEgzTutC2ykeEecJ7wrKcis0UbSUMbhYXHDIYrzMoUPXr1ORLHyy+uiURowTDksCZyK3JZglTIoo/d7M74Yb6uuWta68WF84a1Lo312aU8HMbli74UyJCCYZxYXdUZzKMzBPZLOEj7LSqpmTs0K57Z/8XxV0yOPICdA7m9bt1D1z3P4n4JBjWBPZe632EJvOEzxJQKWvO6JC15yw/9dJvQ4JvmPeDJG8I9dnr6pcs+HYiOgmGPYHHpEc2WMQGeMJHRGgUzQZD0hysfPqX5pEy33wWA3Zake1Oq6vrDymfGydAJkiAYZwPDGBCdXVzfTC6xiA7q881z/Z+/8JeZZ6Un/TR94TyNfNRnLZLya1l+1EqhwLAIvjoW/VLrv1vLCng81fOmRiB08y0nOw9KZgZBWgDZL031gahrPaNjavrH72pIRHdnhP07NGSwu7quauRE2goJjVrlCY1rXXiPqLDhzX7l67G/Pm6rTz3Fk/he2V+6bKiQKa3RYZ0QLRF+vDe8xpOLsS5dzn2wqLGwF3HIPiCqcWE7Tgk7vmb+7mvrSJTvwreX1q39Lq7Cxt7PWcWRRZCZEf0o3iYmQJmrQCqzfgaBM/A8FD9IWNeGGqBnFRx8YhWS38L4vZA12g1cYDqP1KZ8HurH/nRZm9Gt2PVFcXNzX46KFWgfRJqO9I5hx6N2M0MUG8A6gG+DeJ5hS1nUfHT9Yu/v1kmw/KKOZ+ByNlmJh3JMiRF3Poo0msG6xDd4gT+x3fG3FIU8HMtWUMgQFbxTmZEet8Dr1y9SQIx8ajzJkRFcou4cIaZAmB3wuYjcfuLp4AiMNWHJMrOqVm26LXCrsXn7m0Oz5MyGgOt+gGC7ffuswryWSp+WLtkwf1DJ3xz5zBMLch7r+JgmbbZdUsWXrc55aascu45BL4OygEkYaqdXQI2NH6UOPnEDFB9G7Tfqo8WrV16/btDtlQ89ZJdKMFfJQhH9Yq1FwfNtL5Q31h+NFbMjz5Wa+CcK3olOutkgbDtizJNO20SeY89a18f2kMCzrAok8tX9KBpvP413/FJU1A19zcKugAwW2Pez61bV1pRaPICgIldLC4YGHk7yngqTD3MZwFASDnGHO8rq5x7S9mJF5cW/P0ccnFopheaj9DnAbsAx87bLMuxkdNnjy+vnHM7KbeBcgDUw3zUURVio+PX/vfqAXIyg/SVQnc3qualhs7MdVXiwlEWZXuPXbYNpBxaXrL2kI+dEyu+A/vIuhA4FTCl3u0z2NONP7rqTO/5qMAORDt5VXOHB7WdsJ3fwRRCAVQzms3c4i1zVN2DCxYOZkbsT7sWAMeYFsbqtdzziQs+x6Lie0afdEV5QTXdxPRhzBElL9SDlIPLSwcngAMt9RuGsoQuPBsdIXybNHrxREi5FYvnD007nEMuDkGcYxtwnNIFzmjnfiwJLMZV2sWscCRIHDjgddqx54ybcOQZ19HbHTSdaFG2C2G7kxi572gam6OmkWn2bpgeW7/0ui80LLnhrSETwhfqRgKY2GfaIgUU13m4oOPoa60OABZlwSA43qWinxZSG5I4l865jeyNO1M9byjlZOKnv1oCRreJBIdZlN2441FyR7vDMo9/A2ArfDS77sEFC4eqFNJGJ8D2SRiYVXra3DH4OHmhASBrvhoWgLkRjM1oHNTvE1RVubHvZM72Lc3zKG6qaQQaOz3Nce9DMPdpOe8zKVDVJiK6T8Utql/+k+c2x/N6FzlB4PLLnYP56DcG3A1Iu9QVG3QSwE9QeCTE7dFuSucjsbjwjLJRdRfVAz9DAUoMmdfTNlahJLYmeHrpaXO/1XDfgrVDMW6ZdObr4lL/lFs65N/qi8dPzXQNFGsBI4jRNI6lC1LtPg5TD1P/nNfoqoYli54cYjfxuXSB6/O+4xuCOLcjNDoJwJ0fKwIjtNqoDZEQAQzwajDl3u/9CMU7fxUtGzJFt7vvhen6ZuOVFDkOxngmyzmjSItJTMbbttLpnDTv3zG1OyxM3Vr76M1/x9YCCkj8ofbBa3+bd3lQdcnIqCWYSeC/IG7XfLO6mYLGb5SdePHiTd1uksimiwt22GietClE3I7wejKAO1D4WmW7wtvcPuPWKTCzRnj/E5i702fxxrrS0Y1YX8fRGpS4tE2i1wMh2NvMWkj+rnZly9N4+aYshrjGGrye1q88cxJUXvCxI3AQpdd6+CaCpe0a2GA7NjWN2hlY/2ovE/Tw6aOD5mwl73n2i0Y5Rkxip0THdpABRkAkbohCBwNh3q83sxVG9+usSy1vWHHrWmyFMEPY1++qF1/fCOC20hmXPy/ql1Fkai/tqAoGwWS1okoAv9pE8/m8nlsyG24rY+cPBYEl8p+RID06rxYjAViNKT5Tv3TBUz1/vQ5oA1AH4G+bfXkY2XRx4Q79SZgx9TDD8eMrr5hS/cDVb3xsCMxRWM+1WC9EqVpM4HTAtJrtBeDVdjN5u7+vOQimZ6Kx+Uw6t3tcS1phxm5aF3Qd1qeqb4bh96C/FwyXVD975xvYBtCw5Jq3yivnXAazpX29QwpmbQqBR1deMcXMH5dHyxsMCnZPOmkXwFEz5uyxfsnC1wvcZO6f+lqikg7mo++uXbrwqa3tPcUTYH6PBcCg58wtQTjCR5kqAN/72Dix9ti/rhlAgxAIaEg7RXFgaGhLHTV6t2MPnbjHUf8x6S/v/47ZzO+o9nWY7m5RBPio0xFl2tl+TH0dNFqmkV6mljl4ze/vPX7NC/cuqH5+8TZB3nbUPbDwUaj9nuLyrklpdvDET3+1ZPArG3+muKCkm7MttnDeNtqvel03J4AhUIVCe+0NO+dvsk6oRm2iftnW9n7GV14xxYDjepnPcfuRRQZr6ulcM1OAPGcgW1pbXgMfj+id70Y1EVJ4r6kIf68biZfXjMTLK4vnFoXRvznSwSsM8R4uKTBK3AkBhKkaiDdV9RmKLA8sfPbDPy0fDvWpzMgnSX4y7/YIOKE11TwRwFuD6k7RUv/Znp5yisAi/zzE/dTMLsy3/gbxWVTN+yEWzy9Mhc5XEBhY1HfXHYu8c1tdQ/UoNwF2y3qLA0jW+QDXBhGPg/AAqHXbkgO5b2nz2k82AE9u1QSeMn16ur6lbLLLZg/56ourJ9W0hHh7bQrrWwlVjxC+KAg9VD0Ixnu3iJsoGbRGFS9D+ARMnkQY/O+avzzShGEGqr2VN3vaANKKQgkGFdgxpmntkXDcL5+TjMTyuqx/qSzgB6Ts2M0bnhPAsU1102qBJwrykPsg4ktoyRs0aAbSjaDZwQDe22peTFVVii34bE+rgRSYRi+uu/faN8tmzFkhdAcYtOdOBMWi87G1EXjip88r8cqp5nk41U9b2+QPofrdIK7o8VUTAfVw8AhTHlBAPeERwDkPjaIWEX0F5p9Sk8dU5OXqV1aswjCHOW3OnxdlAEjTwb1fETuXEkgv7RFFtc78I1h+fRsq5jxKkYvM9xZAVT0fhSLw/PmKitnvkzzI+lggm+m80tPmPjlUW1gDnwC3PxIOvSdAEoDcEe8u6QOmfk7eDpdA5cjps8c3Lr+2essRuKrKldePmyrOT1PV47PqD6fqZHHiIAJTARjBVBEEhKmD94KMBgglwg4jW2Dqn1zTUvSrKCh6tna34teRdL7v2eGxJL8XgwDUK13zQE856vRLx1pkM3t6tykOZtFj1UuuX5Uz0u82s4vy7gmTFSWzvjSh6Z4b1xTkMSHPEJyJviLBxB3oVH9bWnnZvzY8cN0Wb7De5wToowZ6WwYAYSb9u2wq+yac7N5trM1AF4xPIaoA8PPNS+Dps9NltEOFOsPW26fpdF+IK5KOpAEPNUXHekYcIA6RBwJmseeYBhw+rgZHjK3FAeWNKE8337/915tuBgC8nPA1jwm5U599xo3NDPyA94Fdxp0iQbBdr60PMxjtro5LFI94ylpaepvRphAXjE9nrKIJuKUQj+l8dJ+n/QfJEfki2OK+zMGnnOG5soq5P/bFcvO6xVfXbYlXEk+AyD8BRtmn2+uHr37kR01lFbOXCeWynmZ0vEzE+QD+Z2MRYlKYzJDLP1E2Y878cmcvkvY0Jfh3EXcoKEWmio44UApAB3MBEKYBOs149+KJu6x87LYZT+NXJz+Lrx/yCqZNqsboMIt1bcFhCUs3FOQjB/X1GwLVI4KgdhBbH+f3Wm5SoD5ak7Xw8fav4jQ8PkSR/OmPxPnxhvymo2bZoteo9os4/LGvfdQIALcT534QtOhLYysv/9rEWV+asLnficu4U0SC7fIXjWC3AB1R3G1xmmPvXQTyk2Uz5nxi6LaRqqpcWcXcU8or5txH8y+Kc9+GuP1AUtVDYV3S9GLiMgjBIATAd0ztGi/u6IanZxx1Z8XjNxw2qRap0KMNgohEBIMZ994cRe4+jpj46S9NAHFkvigfigBmrw20YubYmXP3BHFMz3NSBAQfa3zwxzU9iHp33pBOVRD8ZNkpl+1bqOcNU9l56rP/2BCJYdoe1DMZIt/PZtMvlVde/q2xMy/dbA0DSJzfR/udejr/SNevU9L2gpm+gV6ToIESpEE7Z0gIXDZjzqnlrds/RnIpXTATlGLTKE4W6FLpwpiLiApSgFDV7AlTOy8aUXJQ7WM3X1H/2C2/A87yHzSmWjMmgBhEDHQGEwOInd96vWRcQtfeaEuFX6ALxudPiiAMfBIDrtNtZ4kLe/eHimOve4V30tsz5v17vZMsDHRhCi74bKGed/U9N64JPM9R71dukMTdibwTRb6jFrxUVnn5d8sq5uw8lO+kYwI0n8d/gBW19y9a2fX7jx68qRnAUjLPXn58jqpJFRePKBiBy6fP3qesYs5dFC4h5diOgTLrJC7R8TNdCCMjr3oXDSfULb/xhNqHf/LrXt5CYYvBIA6gM4gzwBkksLLI3C4JXXtMoBVzTyHl3/PG2JLQKNvs1N+LAW3rzU4DdnavtDcKVKNVURT2mhDqll+7DkReM9rinOuzNiaAA0H10gV/MvOnmvq/0oXYaJhnTj4JThJxV5F8qazy8u+OrLh4SJRCnxNg7PT7bR/7BfeYRpanaDoobo9WKzquAAQ2llfOno2Az4i4M6CaW3NYnjU2ARc7pwy6zCjH1y+97sya5Tes6NOTJr5RYWBO+9IBFENx2mjOpg4nctLQV4A9x86cu2d5xdwfErib5Kh8gkIJQNgvB1qIoD500yCyD/KYzzA+su7h/E4hU9ydN9dVFXRuSqumji/k+Kxdct2fM9Zygml0PcC2OM2yP0TOAsB4EXdVisXPjq2YXYmCxjX0NQES5qPalPDRfP+vdGz5C6b6GvJMgqSAsAuwKV7oUadfOjbMzl1EBmdbu8ZFF96y+z/oQphGbxntqvr7F97RnzxLCZjx3lQAMSXgDKZAAINE2Gu4kNfUw4RV5TNmTwbRgrjhjDNgPIA9VW1fcUGJ5YoQ5C1v47PvSuTmY8BdMvx5EoTsVS/bDNbD+dL93TU9a1ryLuh26XlPjP0f5wOFLAUIND54Uw2AS8fOvPznpv4KAJ+hC9LxuGxA3CyXwC9uqhnvKZ8xZ37dkoX/WYh7qg9tGuDyTIAO6qMn1jywcHW+//furfNby2bMXkq6PXt6o+PsOpxcPn32jn11v9ygBh49ffbuYVaW07mzO8uW5IkZsPZ8TIFq9pfOZ6fV37/w9v4mSQeCrAh8/L5jTdxhRguGjwY2BUUOZxBeQhd+lS71Nbrwq+LCCyjBESRLOpcsecirut4bL6p56JqPMMAyNSBn9KoSEpvPH1qAPhMFau+/ZT0My/Ka0eoB2Mnls2bvOBTDVXv/NS/VPbDgXJJHm/rbAPRPI6sHaI5B8J3yGXP+XyHuRU3OpTjmL4OEuzbi+brbNNK8kWYuHAPH0wdsQo89+Ut7Bg5LKe7Q2PzYQMEwcYChSb2/pP6BhRdUL71+QFFS6hmBpu3kjc1og9EgopNt3lZQ+gebrWFUl5pJnTWUsAHtQhcAaqthqGpYsmDAzqtUKDPEBRN6aVARwPDwRiOchHfnLRFkBgbhGESYNZRD1k5kUZtm6n/dLyKbxevjIPi38oq5c7CJdbpoqMiXuKDqq7PeHtug9l7f8JKZvoq8vgSDwc5DVZXrN4HHnHrJLuqC+ygyNS6E3pW73YlMcaDph/Q6s37JtTcMZgDCYmZJaKcGjneeTAx0mPTW9mWjEtdVnr3eXNkd8345tO34+iULHhrUslv1/PwBEqoibqMpiXVFHz1uln8dZ2Yww7l9CWAhUbNk4ct1Dyw4T9Smme9C5I1UEzHgP8dXXjHozpipgBUMggm9kz8cAFu20ZDIFbe2wngX85VMUg+KHDK2ZdLB/VoDl0+fPZrmfwPn9uxcD+W8zD3WvXHdZH3NvD+zftmivw7acsy2qUigNECFoFlHbj4cyoPW5nEAGoYLMTsqAXUd8Jx3n7ncZ/PZyEyfhWJR3aFj7hpsbejymbP3hsq03uYzAfXrDCgvr5h90gZP0kozs3cJTrX8Re8OKW+eeEgd8PvNMYI1Sxa+DOC8sTMvvcbUrqK403N1tfsoZxOO9lHmYgBfG0w8q9mcc5n33AYaV290/OKJrjEX1ME8jslAfeZcAC9ulMBkdDVdeJT5bCxHHWZIF2GyXJMv9a+J18pNLb2acelAvBcwp4EtrkemRgQOxd64HYA3h0d0pLbCGJFIA+3VOSwyQzNh1Wb2qoFPO8MjNQ8u+AMA2xQXkRnPFheke1W7MAPIMaAs7k/1cFLRV+kYShCo6rnYTATuNK0XvQRgVlnF3C+S+BHIkryWRrx0OBVV87450DTIsspL96GFR+dbQph6QHglKFdu3AyyPpdIph40nFFWdfG8+sXdyyR1I/DY6V8+j5TPd77MWBuiJ5HFQdV/QM9ZNcs3vW6ySFtAC4QwUBm3P5H4ocIU0KKcNCx0rwtAH10dZXmTS+sIKktMKWbSjBTXpn1jbW7zH4XqbNDU7M8y+g061ja1XmMuw2ZW2YkXf3tLtIWpf3DBT8orL6sG3G8Apno9kCkMnFzaWrtDAzCwZAgNzmKQZwLs5sSyTXduumAnNMtJABbnJXD5CV/cwWA/6Lxgzo5jDyJLXEDMTM+tX379K4UYYKcIleY6eu/mtDAMCIQIQkwAhon5bNbQ8NDCdzbH1ZpbomMobi+oDr133QU7WTFOxgCLtqFgFUyuu7usYs6DIsEZ+RI1SIxwivEYAIE7JkDzmyVGE3HNscX5nViBflvETercx8oxqNtaLBcmr9GVa5deX7AaRD4MU+01lijWI4TaYLQxGCawzVjmyIzn5U1GGCIBpOaJE96MENqjfS4HSCiQHvgEKHsO+QTYHiNAnDB++uzdexF4/ElfPIDkBbHH2Xqo/c5/x82tozvrl91wYyFvzpmNDAIQ7EpeA9q3lcQSL3SBMf7US7YjcGpf4ZiUYBCHA/qYEGIB5PGjKy+ZsuWemus3mHUszA5iAmRfNb7jY2Djl6/GWUfNMReWRAGrepnQqtFXGIRF5n0XD2gPr2hckWG1Kf5tCFRBaRAYvG+/loG5KpMUwknfpVYTDA4Rw0oJ3NhekVciMO9fNfPz41l0QFrWYHqyuOBzvSaGnAAysgFVXSxwyd7d2Yf2NbM2Z6wdUGtY7WMCBFR99A1Q3onLpg6kVYqVGfhDSu/c57jmt52Dqnk/bne2BaWf/pfJUJ0Zv8hcTeWujmfG31EEatnv1z/8k/cL77yxcc61JzFZRzF2CtsDOyyhHApb6fGl+nPzOVfizBj9dd3Sa38zmFOPO+XSP3rqPxNM93QW5by9n0XVvB8VrOgd+t8/2GDn5Dd3CZqtdJlwZX/Pl1XOzD8BOpj6f9QvWfiDwTaCL6uYcwbpTjSLekeQiew7pqXuqLXAivhy6itJjumI9OlmQlv7dgI0yrwFpG4eIh/H9p3k7fzs0s63LWFd4TDmD/X7kjiq99YHYT6bsQFmMqFb8v11r9Ps+bxr65wAjmupO2pzPu+kiotHIOCN4sI984UDUwQgnut/j2MjYX1MgAKA9w6WvLnz39HXWp3iRIwdfagCqj8Jgu5rXnTtXM/2fqo/q1t+7bohGWFnO7enIsZ1vzq1PwWA2LqEdgXNePosXZjqtfUhAnj/cv3INa9sytnJOXeCPLYvAfSRno+cBsEgi0mUZrbfSSCjXORb/YjiNfkadY+deeUob23HtgHfoARH9dKWXSwDM/6y3xNg5dz9YPkmQMA0GznD3Zu2rapLLcquhciYXma0ehiscmTFV8Y1PvjjmoCm+0Pb6cq4+Ve3+qQCzWabXCBD6f6f3HGfzE0gYrHHm4CB9QntCqeNWmFn5tv6IAUKf9emFg9U4EH46HskR/cWQAUGUHURPbZtmpv9F9DKC81sL8IXeSKLlua6soo5HwL2IY21RiOBSebb9haRybmUvj733jXKPl7fWP5Y//UNPou8E6CD+egvNY3lf8amBaCsLJsx+3ERd0a+7DAJwompyJ8K4BeBqU0kcwy2XPf3DiITFALm/1C9/GdD0nLzvTtRTGJXr7H2tdzVQcIIqBkcZVVCvcKg1YqOo5M9kMd81ijT4lQfwCYHTix8r2zGnBV0rrK3ACokCCekxM9AXLSt313um1v8LxiE/2SmIDRX/xoBIDuA3IFsV0Ptqz/dcCAKBap+nSH4Sn97QbdPgOxjAgRxdyH6ShNyO8zO6DMRA3oegF8KTVNojxPtctAs19HeYGbPDVX/1NFp7EBgBzXrDPnNvQURQ9ZDzdmHCfUK168nX9B8vGbl72qWLXq9MPvZdkffzRQAi2tH98tDWzLrSxNEgnvpwri9aEdmVru8xn2fO7O4orjgxAaaaufKAEUw+/LaJVf/eUAToLi8E6D5qM3o7i3E+EVZeUx99FG+ntA5K+boMTMu21+6NcC2nkdMYqoOWWc3E+yXTqFYO4O+cmthi7cUaWtNsisT6qEgHe4BTO9r7xdx2ZeCTNSRx8OqUXV+AfSgyLT+VF0EgFQ29X0GqQM32GN3gCGrANaa6YX1Dy68bYCxcn1PgKYv1R9cWpB2tesevroO5LL8gTYGuqCYlIvEzDfBrEcX+04S5xbNq4cwKe4YJ13Wv+xM43QOAO29CUD1tkUlBn2Gy9HcEPa7PIMuLOvlPaVAfbYJZMEqZzQuv7aasIfyp/MZ6II0gLP7aTXUmPdZujAOdOAgqtWScax5nH75uLfspwZK3rKKOTuDdmre3Of4vgadFZafG3ZHZ1hznvBUw/lC1Q/bCdve6a+rBoYquMFo903Qvk8gIHC818577Cj6TiAIDEb+hWdhm+nI0DBiQhOAv/USQhKmvg2KVzB0YZp75athRkIJ3lb/4MKC9hcSuKvNZ1flJZwZCIzoZyfGKz2jI0yzV6n6x2FW3UHI9iPXJAAiuSMXCZX7vcGaVP3Dpv7MuuKVJzU8uOgPgyi7sSMgo/JNgJbNvG0u+9tCjl9dcfmT6v0DIDV/9xwEAVT/KIKpZoDRcl3imXMiGegI1Wj0UAjU2vXY3zl8Iht1CQBj9/kmcPYUtiUsnp/RGV8+I1BMMetSgiUA0Bo11i2/7u9DdemshfNStFvRQ8lTLaotLvvfQl+v5sFr/jB25qWHmE/1LqnjI6NL/6PfE9/91/4RwB8B/N+Js746IRP5PSzy+xC2B4hdYJgIYLTFaZggLKOQasLeAPl7FwXP1Sz78SZlztWvbnuxdGLxIY6S6pmU63z0XvV9N6wqtKyMPvbCs5pKx+6tyu7RiCEQtUa1HHf4zM878GZr1wK5hPGOptlBCG/R/6l96o7vF5zAD+AHI9K8srktR2Dr2l2P8B6tzvSA0jPwGhIkQD8izD76yKG+nthnn6iQ5uzWiiCNzMPZSGrh3NhcW8o4HhYWR1R4DzE7GkBBCbx2OcqZ4T9nehS5bDefUwHQ6vHy6D/jjUQyE6C/nQwBHU6PLB/+fvkHMH1ArN0bHR/t3ulcFcRjyqZVFbSqvbbKxUVp7BDlqZdnAJwYDLiD84fXC0mQYGB+BgCCaJFF2UxMXA/4rkSOIEBp4P2/FOqi9fdgVyG+ksmwc1+wi/oNhGhqRU0q1MXJK0qQYCMEXvXHR18yjX5DM0AjUKNu2th8FjS7bNwRZ+yxqRe0O+HUy4K0w/hsBJjlor46YkgM6RAw4ucjK5BEYCVI0J/WKoEPvmVR9qN4H9gDPiYx23+GlRF6wy7HXli0KResUfeddCgzm1sJU3bsWMEIxEXs0Nxqq7zZNcnrSZBgw+jYT1hf/ea6UeMnv03zZ8Ig6OoRbt+3E9ktk2nevnmPSUvx7rsDWpuagZfs6b4TBvLNbBbds53QWa02FRKR51fGnm4rkteTIEE/CQwAjdXv/H3U+J2zNPtUh03b9TNuWHXQiGzRbsW77vloy/uv9isp+6NfpCc3/SX4Sdrxy9mIUEOX3s/sSKQoKQaaW+32sj/ZN+evQJLEnyABNhra2RuT9pr2XZJXGQVK5sLEchEuFDAIYWbPR5TZtS/e/1JfJ3//puIdqbxIAr0sneLEjLdcjq+haxcG0FBSDLRm9Bk6rSybhbXJq0mQYJAEBoBJU6ddDrH/Jl1aSViOvB0kdgEUbKLIDZcc8M793z7irzVtjSmsakuXedo+DPkpip5YXMRxkSk0l5zQ3sC7nbziDCOKgNbIHs+46JxJn8Ga5LUkSLCJBAaAiVOPOkGAayhuPyNhkovU6qqRJURZUQbHb1+bnb7TattzTGNqTLECztBmgGcnUSXXtMw5QxAowhTQFtGL00WRz35j0gVoSl5JggQFIjAAlO12SGk6TM2m2Zfpgu2NElcE6qKNlQ5ZBBgRGqaMacLB4xqw39h12HV0M8qL2zAiHSEVKMQB6ohWhFjVnEZDFK4Ixf5rxv95/5HkVSRIMAQEbsf4fQ7bLtDUmTA7E+RBEDfactkf7fHTRkEEhwgOzhEjQ0NpkcfotEdRqCDUK93brRY8trJ55O3vPnb7UwCTSKsECYaawF2x/V5HTzXhYQYeoCJ7kdgZcONBKTFhUS43skXhGj3dqsjcG1mEf2zV1PN4d/KfUDc/KVKXIEEB8P8BCJ0enAhK3VoAAAAASUVORK5CYII=" alt="PASA"></div>
+      <div>
+        <h1>Inteligência de Mercado e Sinistro · Operadoras X e Y</h1>
+        <div class="sub">Dashboard executivo para a diretoria · espelho interativo do Power BI</div>
+      </div>
+      <div class="meta">
+        <span class="chip"><i class="bi bi-calendar3"></i>ago/2025 – jul/2026 · 12 competências</span>
+        <span class="chip"><i class="bi bi-database"></i>Receita · Vidas · Despesa</span>
+      </div>
+    </div>
+    <nav class="tabs" role="tablist" aria-label="Seções do dashboard">
+      <button role="tab" aria-selected="true" aria-controls="tab-1" id="t-1"><span class="num">1</span>Visão executiva</button>
+      <button role="tab" aria-selected="false" aria-controls="tab-2" id="t-2"><span class="num">2</span>Despesas e indicadores</button>
+      <button role="tab" aria-selected="false" aria-controls="tab-3" id="t-3"><span class="num">3</span>Perfil da carteira e achado estratégico</button>
+      <button role="tab" aria-selected="false" aria-controls="tab-4" id="t-4"><span class="num">4</span>Qualidade, riscos e recomendações</button>
+    </nav>
+  </div>
+</header>
+
+<main class="wrap">
+  <div class="banner cdn-error" id="cdn-error"><i class="bi bi-wifi-off"></i><div><strong>Os gráficos não carregaram.</strong><p>O Chart.js vem de CDN (jsDelivr) e precisa de internet. Os KPIs, textos e tabelas continuam disponíveis.</p></div></div>
+
+  <!-- ============================== ABA 1 ============================== -->
+  <section class="tab active" id="tab-1" role="tabpanel" aria-labelledby="t-1">
+    <div class="section-title"><h2>Visão executiva</h2><p>Os números brutos não comparam as operadoras: a diferença de custo vem da idade da carteira.</p></div>
+
+    <div class="banner">
+      <i class="bi bi-exclamation-triangle-fill"></i>
+      <div>
+        <strong>Alerta metodológico: a Operadora X não tem receita na base fornecida.</strong>
+        <p>A X é a maior carteira (4,8× a Y em vidas), mas não tem receita em nenhuma das 12 competências. Por isso a sinistralidade e o ROI da X ficam <b>indisponíveis</b>, e não zerados. Na Y, a sinistralidade de 34,15% fica bem abaixo da referência do setor (≈ 80%, ANS) e só deve ser usada depois de validar o escopo de receita e despesa.</p>
+      </div>
+    </div>
+
+    <div class="grid kpis" id="kpis"></div>
+
+    <div class="grid g-3-2">
+      <div class="card" data-chart="cpcMensal">
+        <div class="card-head">
+          <div><h3>Evolução mensal do custo per capita líquido</h3><p class="desc">R$ por vida/mês · despesa líquida ÷ vidas da competência</p></div>
+          <div class="tools"><button class="btn-ghost" data-toggle-table><i class="bi bi-table"></i> Tabela</button></div>
+        </div>
+        <div class="legend"><span><i class="sw" style="background:var(--serie-x)"></i>Operadora X</span><span><i class="sw" style="background:var(--serie-y)"></i>Operadora Y</span><span><i class="ln"></i>Migração de carteira (jan/26)</span></div>
+        <div class="chart-box"><canvas id="c-cpc" aria-label="Custo per capita mensal X versus Y" role="img"></canvas></div>
+        <div class="table-view"></div>
+      </div>
+
+      <div class="story">
+        <h4><i class="bi bi-lightbulb-fill"></i>A leitura para a diretoria</h4>
+        <ul>
+          <li>Pelo número bruto, a <span class="em-y">Y</span> custa <b>2,1×</b> a <span class="em-x">X</span> por vida (R$ 261,54 × R$ 124,39).</li>
+          <li>Aplicando a pirâmide etária da X, a Y custaria <b>R$ 111,15</b>, ou seja, <b>menos que a X</b>. A idade explica <b>109,7%</b> da diferença.</li>
+          <li>O custo médio por item é praticamente igual (X R$ 26,92; Y R$ 26,47). A diferença está no <b>volume de utilização</b>, não no preço.</li>
+          <li>A queda do per capita da Y a partir de jan/26 é <b>efeito de composição</b>: entra um bloco de ~10 mil vidas cuja despesa ainda está em maturação. Não é resultado de gestão.</li>
+          <li>Na X, o ponto de atenção é o custo por faixa <b>13% a 53% acima da Y</b> entre 19 e 53 anos.</li>
+        </ul>
+        <p><span class="tag info"><i class="bi bi-bullseye"></i>KPI recomendado</span> Custo per capita <b>padronizado por idade</b> como métrica comparativa oficial.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================== ABA 2 ============================== -->
+  <section class="tab" id="tab-2" role="tabpanel" aria-labelledby="t-2">
+    <div class="section-title"><h2>Despesas e indicadores</h2><p>Mix assistencial, receita × despesa e sinistralidade mensal.</p></div>
+
+    <div class="grid g-2-1">
+      <div class="card" data-chart="classif">
+        <div class="card-head">
+          <div><h3>Composição da despesa por classificação</h3><p class="desc" id="classif-desc">Participação % na despesa bruta do período · X vs Y</p></div>
+          <div class="tools">
+            <div class="seg" role="group" aria-label="Unidade">
+              <button aria-pressed="true" data-classif="pct">% do total</button>
+              <button aria-pressed="false" data-classif="abs">R$ milhões</button>
+            </div>
+            <button class="btn-ghost" data-toggle-table><i class="bi bi-table"></i> Tabela</button>
+          </div>
+        </div>
+        <div class="legend"><span><i class="sw" style="background:var(--serie-x)"></i>Operadora X</span><span><i class="sw" style="background:var(--serie-y)"></i>Operadora Y</span></div>
+        <div class="chart-box tall"><canvas id="c-classif" role="img" aria-label="Composição de despesas por classificação"></canvas></div>
+        <div class="table-view"></div>
+      </div>
+
+      <div class="story">
+        <h4><i class="bi bi-chat-quote-fill"></i>O mix de despesa da Y está concentrado em medicamentos e pacotes</h4>
+        <p>Na <span class="em-y">Y</span>, <b>medicamentos (28,3%)</b> e <b>pacotes (21,4%)</b> somam metade da despesa bruta. Na <span class="em-x">X</span>, os mesmos itens pesam 15,5% e 16,3%.</p>
+        <p>A <b>internação</b> responde por <b>56,4%</b> da despesa líquida da Y, contra 46,0% na X. É o perfil de uma carteira envelhecida, com severidade alta e doenças crônicas.</p>
+        <p>A <span class="em-x">X</span> concentra o gasto em itens ambulatoriais: <b>exames (19,9%)</b>, honorários (14,9%), consultas (7,7%) e terapias (4,7%).</p>
+        <p class="mt"><span class="tag warn"><i class="bi bi-arrow-right-circle"></i>Ação</span> Na Y: auditoria de medicamentos especiais, autorização prévia por protocolo e renegociação de pacotes. Na X: protocolos para pedido de exames e terapias seriadas.</p>
+        <p><span class="tag info"><i class="bi bi-info-circle"></i>"N/I"</span> 1,2% (X) e 1,5% (Y) da despesa não têm classificação assistencial e, sem classificação, não há como gerir esse gasto.</p>
+      </div>
+    </div>
+
+    <div class="card mt" data-chart="recdesp">
+      <div class="card-head">
+        <div><h3>Operadora Y: receita × despesa líquida e sinistralidade mensal</h3><p class="desc">Os dois painéis usam o mesmo eixo de meses: valores em R$ milhões no de cima e sinistralidade (%) no de baixo. A X não aparece porque não tem receita na base.</p></div>
+        <div class="tools"><button class="btn-ghost" data-toggle-table><i class="bi bi-table"></i> Tabela</button></div>
+      </div>
+      <div class="legend"><span><i class="sw" style="background:var(--neutral)"></i>Receita</span><span><i class="sw" style="background:var(--serie-y)"></i>Despesa líquida</span></div>
+      <div class="chart-box"><canvas id="c-recdesp" role="img" aria-label="Receita versus despesa líquida mensal da Operadora Y"></canvas></div>
+      <div class="legend" style="margin-top:14px"><span><i class="sw" style="background:var(--accent);height:3px;border-radius:2px"></i>Sinistralidade mensal da Y</span><span><i class="ln"></i>Referência de mercado ≈ 80% (ANS)</span></div>
+      <div class="chart-box short"><canvas id="c-sinistro" role="img" aria-label="Sinistralidade mensal da Operadora Y"></canvas></div>
+      <div class="table-view"></div>
+    </div>
+  </section>
+
+  <!-- ============================== ABA 3 ============================== -->
+  <section class="tab" id="tab-3" role="tabpanel" aria-labelledby="t-3">
+    <div class="section-title"><h2>Perfil da carteira e achado estratégico</h2><p>Pirâmide etária, custo por faixa e a transferência de carteira de jan/2026.</p></div>
+
+    <div class="grid g-2">
+      <div class="card" data-chart="piramide">
+        <div class="card-head">
+          <div><h3>Pirâmide: % das vidas × % da despesa por faixa etária</h3><p class="desc">Vidas à esquerda, despesa bruta à direita · média mensal do período</p></div>
+          <div class="tools">
+            <div class="seg" role="group" aria-label="Operadora">
+              <button aria-pressed="false" data-pir="X">Operadora X</button>
+              <button aria-pressed="true" data-pir="Y">Operadora Y</button>
+            </div>
+            <button class="btn-ghost" data-toggle-table><i class="bi bi-table"></i> Tabela</button>
+          </div>
+        </div>
+        <div class="legend" id="pir-legend"></div>
+        <div class="chart-box tall"><canvas id="c-piramide" role="img" aria-label="Pirâmide etária de vidas e despesa"></canvas></div>
+        <div class="table-view"></div>
+        <div class="banner mt" style="margin-bottom:0" id="pir-callout"></div>
+      </div>
+
+      <div class="card" data-chart="porVida">
+        <div class="card-head">
+          <div><h3>Despesa bruta por vida/mês, por faixa etária</h3><p class="desc">Na mesma faixa de idade, a Y é <b>mais barata em 8 das 10 faixas</b></p></div>
+          <div class="tools"><button class="btn-ghost" data-toggle-table><i class="bi bi-table"></i> Tabela</button></div>
+        </div>
+        <div class="legend"><span><i class="sw" style="background:var(--serie-x)"></i>Operadora X</span><span><i class="sw" style="background:var(--serie-y)"></i>Operadora Y</span></div>
+        <div class="chart-box tall"><canvas id="c-porvida" role="img" aria-label="Despesa por vida por faixa etária"></canvas></div>
+        <div class="table-view"></div>
+        <div class="banner info mt" style="margin-bottom:0"><i class="bi bi-diagram-3-fill"></i><div><strong>É a idade, não a ineficiência.</strong><p>A Y só fica mais cara a partir de 54 anos. Como 48,5% das vidas dela estão na faixa 59+, o per capita médio sobe para 2,1× o da X.</p></div></div>
+      </div>
+    </div>
+
+    <div class="card mt" style="border-color: rgba(245,166,35,.45)">
+      <div class="card-head">
+        <div>
+          <h3><i class="bi bi-star-fill" style="color:var(--accent)"></i> Achado estratégico: transferência de carteira X → Y em jan/2026</h3>
+          <p class="desc">Plano <code>340154BC84</code> (X, PA) e plano <code>0F2726E6AC</code> (Y, PA). Os dois foram identificados pelos dados, pelo maior salto de vidas entre competências.</p>
+        </div>
+        <span class="tag crit"><i class="bi bi-cash-coin"></i>Sem receita vinculada</span>
+      </div>
+
+      <div class="stat-grid" style="margin-bottom:16px">
+        <div class="stat"><div class="n">10.110 <span class="arrow">→</span> 8</div><div class="t">Vidas do plano da X (dez/25 → jan/26)</div></div>
+        <div class="stat"><div class="n">0 <span class="arrow">→</span> 10.244</div><div class="t">Vidas do plano da Y no mesmo mês</div></div>
+        <div class="stat"><div class="n">99,0%</div><div class="t">Semelhança do perfil etário entre os dois planos</div></div>
+        <div class="stat"><div class="n">13,6%</div><div class="t">Vidas da Y sem receita a partir de jan/26 (antes: 1,8%)</div></div>
+        <div class="stat"><div class="n">R$ 0,95 <small>mi</small></div><div class="t">Cauda de sinistros paga pela X após a saída</div></div>
+        <div class="stat"><div class="n"><span class="em-x">+0,52%</span> · <span class="em-y">−0,84%</span></div><div class="t">Crescimento orgânico X · Y (no total: −2,05% · +12,42%)</div></div>
+      </div>
+
+      <div class="grid g-2">
+        <div data-chart="migVidas" class="card" style="background:var(--card-2)">
+          <div class="card-head"><div><h3>Vidas por competência nos planos envolvidos</h3><p class="desc">No mesmo mês, um plano zera e o outro começa com tamanho equivalente</p></div><div class="tools"><button class="btn-ghost" data-toggle-table><i class="bi bi-table"></i> Tabela</button></div></div>
+          <div class="legend"><span><i class="sw" style="background:var(--serie-x)"></i>Plano 340154BC84 (X)</span><span><i class="sw" style="background:var(--serie-y)"></i>Plano 0F2726E6AC (Y)</span></div>
+          <div class="chart-box"><canvas id="c-migvidas" role="img" aria-label="Vidas dos planos migrados"></canvas></div>
+          <div class="table-view"></div>
+        </div>
+        <div data-chart="migDesp" class="card" style="background:var(--card-2)">
+          <div class="card-head"><div><h3>Despesa líquida mensal nos planos envolvidos</h3><p class="desc">Cauda na X e maturação na Y. O plano parece "barato" nos primeiros meses</p></div><div class="tools"><button class="btn-ghost" data-toggle-table><i class="bi bi-table"></i> Tabela</button></div></div>
+          <div class="legend"><span><i class="sw" style="background:var(--serie-x)"></i>Plano 340154BC84 (X)</span><span><i class="sw" style="background:var(--serie-y)"></i>Plano 0F2726E6AC (Y)</span></div>
+          <div class="chart-box"><canvas id="c-migdesp" role="img" aria-label="Despesa líquida dos planos migrados"></canvas></div>
+          <div class="table-view"></div>
+        </div>
+      </div>
+
+      <div class="grid g-2 mt">
+        <div class="story">
+          <h4><i class="bi bi-exclamation-octagon-fill"></i>Por que isso importa</h4>
+          <ul>
+            <li>O +12,42% da Y <b>não é expansão comercial</b>. Sem o bloco transferido, a Y <b>perdeu vidas</b> (−0,84%).</li>
+            <li>O bloco chegou <b>sem nenhuma linha de receita</b>, e a receita por vida da Y caiu ~12% em jan/26.</li>
+            <li>A despesa do plano na Y só chega ao patamar histórico (≈ R$ 0,4 mi/mês) em mai/26. Até lá, o atraso de aviso <b>reduz artificialmente</b> o per capita da Y.</li>
+            <li>Sem o plano, a Y teria sinistralidade de <b>33,95%</b> e per capita de <b>R$ 280,25</b>.</li>
+          </ul>
+        </div>
+        <div class="story">
+          <h4><i class="bi bi-check2-square"></i>Próximos passos</h4>
+          <ul>
+            <li>Confirmar a <b>natureza contratual</b> da operação (portabilidade, cessão de carteira ou migração de contrato empresarial).</li>
+            <li>Definir quem responde pela <b>cauda (IBNR)</b> do plano <code>340154BC84</code>.</li>
+            <li>Obter a <b>receita do plano</b> <code>0F2726E6AC</code> antes de reportar a sinistralidade da Y.</li>
+            <li>Mostrar no Power BI o crescimento <b>orgânico e inorgânico</b> separadamente.</li>
+          </ul>
+          <p style="font-size:12.5px;color:var(--ink-3)"><i class="bi bi-info-circle"></i> Os dados mostram uma transferência compatível em data, porte, UF e perfil etário, mas não comprovam a operação juridicamente.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================== ABA 4 ============================== -->
+  <section class="tab" id="tab-4" role="tabpanel" aria-labelledby="t-4">
+    <div class="section-title"><h2>Qualidade, riscos e recomendações</h2><p>As 7 evidências do estudo no formato Evidência → Risco → Recomendação.</p></div>
+
+    <div class="card">
+      <div class="card-head"><div><h3>Resumo executivo: 7 evidências</h3><p class="desc">Todos os números são recalculados e conferidos por <code>assert</code> no notebook de análise</p></div></div>
+      <div class="ev-wrap">
+        <table class="ev-table" id="ev-table">
+          <thead><tr><th class="n">#</th><th class="ev"><i class="bi bi-search"></i>Evidência</th><th class="ri"><i class="bi bi-exclamation-diamond"></i>Risco</th><th class="re"><i class="bi bi-check-circle"></i>Recomendação</th></tr></thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="grid g-2 mt">
+      <div class="card anomaly">
+        <div class="card-head"><div><h3><i class="bi bi-bug" style="color:var(--accent)"></i> Anomalias de dados financeiros</h3><p class="desc">Registros em que a coparticipação é maior que o valor bruto (despesa líquida negativa)</p></div><span class="tag ok"><i class="bi bi-shield-check"></i>Impacto imaterial</span></div>
+        <div style="display:flex;align-items:baseline;gap:10px;flex-wrap:wrap"><div class="big-n" id="anom-total"></div><div style="color:var(--ink-3)">ocorrências · preservadas e sinalizadas, nunca excluídas</div></div>
+        <div class="split" id="anom-split"></div>
+        <div class="stat-grid mt">
+          <div class="stat"><div class="n">34,15% <span class="arrow">→</span> 34,24%</div><div class="t">Sinistralidade da Y se os negativos forem truncados em zero (sensibilidade)</div></div>
+          <div class="stat"><div class="n">R$ 0,95 <small>mi</small></div><div class="t">Despesa de cauda na X após a saída do plano (8 vidas residuais)</div></div>
+        </div>
+        <p style="font-size:13px;color:var(--ink-2);margin:14px 0 0">A taxa de ocorrência na X é ~5× a da Y, o que aponta para uma <b>regra de lançamento não documentada</b> (estornos, coparticipação agregada, teto) e não para erro aleatório. As ocorrências se concentram em consultas, exames e terapias.</p>
+      </div>
+
+      <div class="card">
+        <div class="card-head"><div><h3><i class="bi bi-flag" style="color:var(--accent)"></i> Recomendações priorizadas</h3><p class="desc">Sequência sugerida para a diretoria</p></div></div>
+        <div class="prio-h">Curto prazo (0–30 dias): governança de dados</div>
+        <ol class="prio">
+          <li><span><b>Solicitar a receita da X</b> e a do plano transferido <code>0F2726E6AC</code>.</span></li>
+          <li><span><b>Confirmar contratualmente</b> a transferência e quem responde pela cauda de sinistros.</span></li>
+          <li><span><b>Validar o escopo</b> de receita e despesa da Y antes de usar os 34% em precificação.</span></li>
+          <li><span><b>Formalizar o dicionário de dados</b>: despesa líquida, coparticipação e frequência.</span></li>
+        </ol>
+        <div class="prio-h">Médio prazo (30–90 dias): inteligência de sinistro</div>
+        <ol class="prio" style="counter-reset:p 4">
+          <li><span><b>Y:</b> programa de crônicos e alto custo para 59+, gestão de internações, medicamentos e pacotes.</span></li>
+          <li><span><b>X:</b> utilização e protocolos nas faixas de 19 a 53 anos (exames, consultas, terapias).</span></li>
+          <li><span><b>Provisionar IBNR</b> com curvas de atraso por plano, começando pelos planos da transferência.</span></li>
+        </ol>
+        <div class="prio-h">Dashboard</div>
+        <ol class="prio" style="counter-reset:p 7">
+          <li><span>Publicar o <b>per capita padronizado por idade</b> e o crescimento <b>orgânico × inorgânico</b>.</span></li>
+          <li><span>Medidas DAX por <b>razão de totais</b>, sem misturar despesa da X com receita da Y.</span></li>
+        </ol>
+      </div>
+    </div>
+
+    <div class="card mt">
+      <div class="card-head"><div><h3><i class="bi bi-info-square" style="color:var(--ink-3)"></i> Limitações</h3></div></div>
+      <div class="stat-grid" style="grid-template-columns:repeat(auto-fit,minmax(240px,1fr))">
+        <div class="stat"><div class="t"><b style="color:var(--ink)">Despesa líquida</b> é estimada (bruto − coparticipação), sem regra oficial confirmada.</div></div>
+        <div class="stat"><div class="t"><b style="color:var(--ink)">Receita da X</b> está ausente; não é possível calcular sinistralidade nem ROI da X.</div></div>
+        <div class="stat"><div class="t"><b style="color:var(--ink)">Transferência</b> foi inferida pelos dados (data, porte, UF, perfil etário), sem documento contratual.</div></div>
+        <div class="stat"><div class="t"><b style="color:var(--ink)">Vidas</b> representam exposição média mensal, não pessoas únicas. As análises são descritivas: não indicam causalidade.</div></div>
+      </div>
+    </div>
+  </section>
+
+  <footer>
+    <span>Fonte: <code>output/*.csv</code> (mesmos arquivos lidos pelo Power BI) e <code>data/</code>, via <code>04_analise_consolidada_operadoras.ipynb</code>. Dados embutidos em 11/10/2026.</span>
+    <span>PASA · Gerência de Inteligência de Mercado e Sinistro</span>
+  </footer>
+</main>
+
+<script>
+/* ===================== DADOS (pré-processados a partir de output/*.csv) ===================== */
+const DATA = {"mensal":{"X":{"data_ref":["2025-08-01","2025-09-01","2025-10-01","2025-11-01","2025-12-01","2026-01-01","2026-02-01","2026-03-01","2026-04-01","2026-05-01","2026-06-01","2026-07-01"],"despesa_liquida":[54262602.4,48490711.69,49161483.97,43013813.515,47185702.135,46428423.185,42841389.11,53582265.555,49168349.97,51398262.31,50268369.76,57355152.53],"vidas":[402180.0,401670.0,402308.0,403324.0,404184.0,393846.0,393580.0,395056.0,393692.0,391696.0,392920.0,393954.0],"custo_per_capita_mensal":[134.9212,120.7228,122.1986,106.6483,116.7431,117.8847,108.8505,135.6321,124.8904,131.2198,127.9354,145.5885]},"Y":{"data_ref":["2025-08-01","2025-09-01","2025-10-01","2025-11-01","2025-12-01","2026-01-01","2026-02-01","2026-03-01","2026-04-01","2026-05-01","2026-06-01","2026-07-01"],"despesa_liquida":[23914583.34,24695489.73,22074398.535,17625849.335,24019476.585,21263246.92,20505642.37,23982722.385,21485811.13,19274024.545,19193818.58,20590714.095],"vidas":[77578.0,77430.0,77102.0,76710.0,76336.0,86382.0,86078.0,86174.0,86478.0,85678.0,85698.0,87214.0],"custo_per_capita_mensal":[308.265,318.9396,286.3012,229.7725,314.6546,246.1537,238.2216,278.3058,248.4541,224.9589,223.9704,236.0941],"receita":[59873873.415,59773576.32,64658258.13,64404463.125,64248113.205,64014364.02,63793674.24,63444378.225,63324972.375,63275064.03,63106609.8,63342158.49],"sinistralidade_pct":[39.9416,41.3151,34.1401,27.3674,37.3855,33.2164,32.1437,37.8012,33.9294,30.4607,30.4149,32.5071],"roi_pct":[150.3655,142.0425,192.9106,265.3978,167.4834,201.0564,211.103,164.542,194.7293,228.2919,228.7861,207.6249]}},"periodo":{"X":{"receita_total":null,"despesa_liquida_total":593156526.13,"media_vidas":397367.5,"sinistralidade_pct":null,"roi_pct":null,"custo_per_capita":124.3929372956604},"Y":{"receita_total":757259505.3749999,"despesa_liquida_total":258625777.55,"media_vidas":82404.83333333333,"sinistralidade_pct":34.15285984715726,"roi_pct":192.8012484094318,"custo_per_capita":261.53985461006533}},"classificacao":{"labels":["Medicamentos","Pacotes","Exames","Materiais","Honorários médicos","Diárias/taxas (internação)","Consultas","OPME","N/I (sem classificação)","Terapias","Outros"],"X":{"pct":[15.548,16.339,19.946,10.288,14.852,7.131,7.738,1.381,1.175,4.72,0.882],"abs":[107.215,112.668,137.542,70.944,102.414,49.172,53.358,9.526,8.1,32.546,6.081]},"Y":{"pct":[28.265,21.421,13.223,11.441,8.55,8.488,3.778,1.52,1.512,1.299,0.504],"abs":[83.181,63.04,38.913,33.67,25.161,24.979,11.117,4.474,4.449,3.824,1.483]}},"faixa":{"labels":["0 - 18","19 - 23","24 - 28","29 - 33","34 - 38","39 - 43","44 - 48","49 - 53","54 - 58","59 e acima"],"X":{"vidas_pct":[32.524,7.124,4.417,7.432,11.367,13.396,10.727,5.523,3.002,4.489],"despesa_pct":[20.472,4.281,3.921,6.812,10.801,14.955,12.749,8.085,4.766,13.159],"por_vida":[91.02,86.9,128.38,132.55,137.41,161.44,171.87,211.68,229.62,423.89]},"Y":{"vidas_pct":[11.238,3.453,5.138,4.934,5.125,5.397,6.474,5.026,4.706,48.51],"despesa_pct":[3.256,0.733,1.482,1.872,1.874,2.57,3.045,2.908,3.874,78.385],"por_vida":[86.23,63.18,85.87,112.93,108.8,141.74,139.98,172.18,245.02,480.89]}},"qualidade":{"X":{"registros":3985249,"ocorrencias":21188,"pct":0.5316606314937913,"saldo":-5056366.614999999,"despesa_liquida":593156526.13},"Y":{"registros":1009982,"ocorrencias":1157,"pct":0.114556497046482,"saldo":-639702.8600000001,"despesa_liquida":258625777.55}},"migracao":{"data_ref":["2025-08-01","2025-09-01","2025-10-01","2025-11-01","2025-12-01","2026-01-01","2026-02-01","2026-03-01","2026-04-01","2026-05-01","2026-06-01","2026-07-01"],"vidas_x":[10282,10260,10214,10176,10110,8,8,8,8,8,8,8],"vidas_y":[0,0,0,0,0,10244,10214,10248,10240,10224,10128,10284],"desp_x":[463146,315389,402944,319582,363073,342825,210672,220488,31589,96770,14287,37295],"desp_y":[0,0,0,0,0,0,90,71238,215819,392619,461453,417512]},"evidencias":[{"tema":"Transferência de carteira","ev":"Em jan/2026 o plano <code>340154BC84</code> da X (PA) cai de <b>10.110 para 8 vidas</b> e, no mesmo mês, surge o plano <code>0F2726E6AC</code> da Y (PA) com <b>10.244 vidas</b> e perfil etário 99,0% semelhante. Sem esse bloco, a X cresce 0,52% e a Y encolhe 0,84%.","risco":"Ler o +12,42% da Y como expansão comercial. O plano chegou à Y <b>sem receita na base</b> (13,6% das vidas da Y desde jan/26), e a X seguiu pagando <b>R$ 0,95 mi de cauda</b>.","rec":"Confirmar a natureza contratual da operação, definir quem responde pela cauda (IBNR) e obter a receita do plano antes de reportar a sinistralidade da Y."},{"tema":"Custo per capita","ev":"Y <b>R$ 261,54</b> × X <b>R$ 124,39</b> por vida/mês (2,1×). Com a pirâmide etária da X, a Y custaria <b>R$ 111,15</b>: a idade explica 109,7% da diferença. O custo por item é equivalente (X R$ 26,92; Y R$ 26,47).","risco":"Concluir que a Y é \"cara\" ou \"ineficiente\" é um erro de leitura. O ponto de atenção da X é o custo por faixa <b>13% a 53% acima da Y</b> entre 19 e 53 anos.","rec":"Adotar o <b>custo per capita padronizado por idade</b> como KPI comparativo. Na X, investigar frequência de utilização e protocolos nas faixas adultas."},{"tema":"Concentração etária","ev":"Na Y, a faixa 59+ reúne <b>48,51% das vidas</b> e <b>78,39% da despesa bruta</b>. A internação responde por 56,43% da despesa líquida da Y (X: 45,96%).","risco":"Severidade alta e crônica, exposição a eventos de alto custo e pressão estrutural de custo com o envelhecimento da carteira.","rec":"Gestão de crônicos e linhas de cuidado 60+, monitoramento de alto custo e reinternações, reajuste aderente à pirâmide etária."},{"tema":"Mix assistencial","ev":"Na Y, <b>medicamentos (28,26%)</b> e <b>pacotes (21,42%)</b> da despesa bruta. Na X: 15,55% e 16,34%.","risco":"Exposição a medicamentos de alto custo e a pacotes hospitalares mal precificados.","rec":"Auditoria de medicamentos especiais, autorização prévia por protocolo e renegociação de pacotes com a rede."},{"tema":"Sinistralidade e ROI","ev":"Na Y, <b>sinistralidade de 34,15%</b> e <b>ROI assistencial de 192,80%</b>, muito abaixo dos patamares usuais do setor (≈ 80%).","risco":"Apresentar uma margem que talvez não exista: um descasamento de escopo entre receita e despesa infla o resultado.","rec":"Validar o escopo de receita e despesa (competência, itens, completude) <b>antes</b> de usar esses números em precificação, reajuste ou metas."},{"tema":"Receita da X","ev":"A <b>receita da Operadora X está ausente</b> em todas as 12 competências.","risco":"A carteira 4,8× maior que a Y fica sem avaliação de sustentabilidade financeira.","rec":"Solicitar a receita da X com prioridade. Até lá, sinistralidade e ROI da X ficam <b>indisponíveis, nunca zero</b>."},{"tema":"Qualidade financeira","ev":"<b>22.345 eventos</b> com coparticipação maior que o valor bruto (0,53% na X; 0,11% na Y). Se forem truncados, a sinistralidade da Y passa de 34,15% para 34,24%.","risco":"Efeito imaterial, mas indica uma regra de lançamento não documentada.","rec":"Auditar a regra de coparticipação e publicar um dicionário de dados com a definição oficial de despesa líquida."}],"padronizadoY":111.15};
+
+/* ===================== Utilidades ===================== */
+const nf = (d) => new Intl.NumberFormat('pt-BR', { minimumFractionDigits: d, maximumFractionDigits: d });
+const fmtBRL = (v, d = 2) => 'R$ ' + nf(d).format(v);
+const fmtMi = (v, d = 1) => 'R$ ' + nf(d).format(v / 1e6) + ' mi';
+const fmtPct = (v, d = 1) => nf(d).format(v) + '%';
+const fmtInt = (v) => nf(0).format(v);
+const MES = ['jan','fev','mar','abr','mai','jun','jul','ago','set','out','nov','dez'];
+const mesLbl = (iso) => { const [y, m] = iso.split('-'); return MES[+m - 1] + '/' + y.slice(2); };
+const css = (n) => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+const C = { x: css('--serie-x'), y: css('--serie-y'), neutral: css('--neutral'), accent: css('--accent'),
+            grid: '#22384E', ink2: css('--ink-2'), ink3: css('--ink-3'), card: css('--card'), card2: css('--card-2') };
+const alpha = (hex, a) => { const n = parseInt(hex.slice(1), 16); return `rgba(${n >> 16},${(n >> 8) & 255},${n & 255},${a})`; };
+
+/* ===================== KPIs (Aba 1) ===================== */
+(function renderKPIs() {
+  const P = DATA.periodo;
+  const kpi = (label, icon, body, foot, hl) =>
+    `<div class="card kpi ${hl ? 'hl' : ''}"><div class="label"><i class="bi ${icon}"></i>${label}</div>${body}${foot ? `<div class="foot">${foot}</div>` : ''}</div>`;
+  const row = (who, val) => `<div class="row"><span class="who"><i class="dot ${who.toLowerCase()}"></i>${who}</span><span class="val">${val}</span></div>`;
+  const html = [
+    kpi('Custo per capita (mês)', 'bi-person-vcard',
+      `<div class="rows">${row('X', fmtBRL(P.X.custo_per_capita))}${row('Y', fmtBRL(P.Y.custo_per_capita))}</div>`,
+      `A Y custa <b style="color:var(--ink)">${nf(1).format(P.Y.custo_per_capita / P.X.custo_per_capita)}×</b> a X no número bruto`),
+    kpi('Per capita Y padronizado', 'bi-sliders', `<div class="big" style="color:var(--accent)">${fmtBRL(DATA.padronizadoY)}</div>`,
+      `Com a pirâmide etária da X, a Y custaria <b style="color:var(--ink)">menos</b> que a X (${fmtBRL(P.X.custo_per_capita)})`, true),
+    kpi('Sinistralidade Y', 'bi-heart-pulse', `<div class="big">${fmtPct(P.Y.sinistralidade_pct, 2)}</div>`,
+      `<span class="tag warn"><i class="bi bi-exclamation-triangle"></i>Atípica: validar escopo</span> · X: <span class="na">indisponível</span>`),
+    kpi('ROI assistencial Y', 'bi-graph-up-arrow', `<div class="big">${fmtPct(P.Y.roi_pct, 2)}</div>`,
+      `(Receita − Despesa) ÷ Despesa · X: <span class="na">indisponível</span>`),
+    kpi('Vidas médias / mês', 'bi-people', `<div class="rows">${row('X', fmtInt(P.X.media_vidas))}${row('Y', fmtInt(P.Y.media_vidas))}</div>`,
+      `Exposição média mensal · X é ${nf(1).format(P.X.media_vidas / P.Y.media_vidas)}× a Y`),
+    kpi('Despesa líquida total', 'bi-cash-stack', `<div class="rows">${row('X', fmtMi(P.X.despesa_liquida_total))}${row('Y', fmtMi(P.Y.despesa_liquida_total))}</div>`,
+      `Bruto − coparticipação · 12 competências`)
+  ].join('');
+  document.getElementById('kpis').innerHTML = html;
+})();
+
+/* ===================== Evidências e anomalias (Aba 4) ===================== */
+(function renderTab4() {
+  document.querySelector('#ev-table tbody').innerHTML = DATA.evidencias.map((e, i) =>
+    `<tr><td class="n"><span>${i + 1}</span></td><td><span class="theme">${e.tema}</span>${e.ev}</td><td>${e.risco}</td><td>${e.rec}</td></tr>`).join('');
+  const Q = DATA.qualidade;
+  document.getElementById('anom-total').textContent = fmtInt(Q.X.ocorrencias + Q.Y.ocorrencias);
+  document.getElementById('anom-split').innerHTML = ['X', 'Y'].map(op => {
+    const q = Q[op], impacto = -q.saldo / q.despesa_liquida * 100;
+    return `<div class="stat"><div class="t" style="margin:0 0 4px;display:flex;align-items:center;gap:6px"><i class="dot ${op.toLowerCase()}"></i>Operadora ${op}</div>
+      <div class="n">${fmtInt(q.ocorrencias)}</div>
+      <div class="t">${fmtPct(q.pct, 2)} dos ${fmtInt(q.registros)} registros</div>
+      <div class="t">Saldo negativo: <b style="color:var(--ink)">−${fmtMi(Math.abs(q.saldo), 2)}</b> (${fmtPct(impacto, 2)} da despesa líquida)</div>
+      <div class="bar-mini" title="${fmtPct(impacto, 2)} da despesa líquida"><div style="width:${Math.max(impacto * 20, 2)}%;background:${op === 'X' ? C.x : C.y}"></div></div></div>`;
+  }).join('');
+})();
+
+/* ===================== Gráficos ===================== */
+const charts = {};
+const builders = {};
+const built = new Set();
+
+if (window.Chart) {
+  Chart.defaults.color = C.ink2;
+  Chart.defaults.font.family = css('--font');
+  Chart.defaults.font.size = 12;
+  Chart.defaults.borderColor = C.grid;
+  Chart.defaults.maintainAspectRatio = false;
+  Chart.defaults.plugins.legend.display = false;   // legendas em HTML acima de cada gráfico
+  Object.assign(Chart.defaults.plugins.tooltip, {
+    backgroundColor: '#0E1C2A', borderColor: '#2C4762', borderWidth: 1, titleColor: '#EAF1F7', bodyColor: '#B4C4D4',
+    padding: 10, cornerRadius: 8, boxPadding: 4, usePointStyle: true, titleFont: { weight: '600' }
+  });
+  Chart.defaults.interaction = { mode: 'index', intersect: false };
+  Chart.defaults.elements.line.borderWidth = 2;
+  Chart.defaults.elements.point.radius = 3;
+  Chart.defaults.elements.point.hoverRadius = 6;
+  Chart.defaults.elements.point.hitRadius = 12;
+  Chart.defaults.elements.bar.borderRadius = 4;
+  Chart.defaults.elements.bar.borderSkipped = 'start';
+} else {
+  document.getElementById('cdn-error').style.display = 'flex';
+}
+
+const gridOpts = (extra = {}) => ({ grid: { color: alpha('#22384E', 1), drawTicks: false }, border: { display: false }, ticks: { color: C.ink3, padding: 8 }, ...extra });
+const noGrid = (extra = {}) => ({ grid: { display: false }, border: { color: C.grid }, ticks: { color: C.ink3 }, ...extra });
+
+/* Linha vertical marcando jan/26 (migração) */
+const markerPlugin = (labelIdx, text) => ({
+  id: 'marker',
+  afterDatasetsDraw(chart) {
+    const { ctx, chartArea: a, scales: { x } } = chart;
+    const px = x.getPixelForValue(labelIdx);
+    ctx.save();
+    ctx.strokeStyle = C.ink3; ctx.setLineDash([4, 4]); ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.moveTo(px, a.top); ctx.lineTo(px, a.bottom); ctx.stroke();
+    ctx.setLineDash([]); ctx.fillStyle = C.ink3; ctx.font = '600 11px ' + css('--font');
+    ctx.textAlign = 'left'; ctx.fillText(text, px + 6, a.top + 12);
+    ctx.restore();
+  }
+});
+
+/* Linha horizontal de referência */
+const refLinePlugin = (value, text) => ({
+  id: 'refline',
+  afterDatasetsDraw(chart) {
+    const { ctx, chartArea: a, scales: { y } } = chart;
+    const py = y.getPixelForValue(value);
+    ctx.save();
+    ctx.strokeStyle = C.ink3; ctx.setLineDash([6, 4]); ctx.lineWidth = 1.5;
+    ctx.beginPath(); ctx.moveTo(a.left, py); ctx.lineTo(a.right, py); ctx.stroke();
+    ctx.setLineDash([]); ctx.fillStyle = C.ink3; ctx.font = '600 11px ' + css('--font');
+    ctx.textAlign = 'right'; ctx.fillText(text, a.right, py - 6);
+    ctx.restore();
+  }
+});
+
+/* Rótulo direto no último ponto de cada série */
+const endLabelPlugin = (fmt) => ({
+  id: 'endlabel',
+  afterDatasetsDraw(chart) {
+    const { ctx } = chart;
+    chart.data.datasets.forEach((ds, i) => {
+      const meta = chart.getDatasetMeta(i);
+      if (meta.hidden || !meta.data.length) return;
+      const pt = meta.data[meta.data.length - 1];
+      ctx.save(); ctx.fillStyle = '#EAF1F7'; ctx.font = '600 11.5px ' + css('--font');
+      ctx.textAlign = 'left'; ctx.textBaseline = 'middle';
+      ctx.fillText(fmt(ds.data[ds.data.length - 1], ds), pt.x + 8, pt.y);
+      ctx.restore();
+    });
+  }
+});
+
+const meses = DATA.mensal.X.data_ref.map(mesLbl);
+const idxJan = DATA.mensal.X.data_ref.indexOf('2026-01-01');
+
+/* --- Aba 1: custo per capita mensal --- */
+builders.cpcMensal = () => {
+  charts.cpcMensal = new Chart(document.getElementById('c-cpc'), {
+    type: 'line',
+    data: { labels: meses, datasets: [
+      { label: 'Operadora X', data: DATA.mensal.X.custo_per_capita_mensal, borderColor: C.x, backgroundColor: C.x, pointBorderColor: C.card, pointBorderWidth: 2 },
+      { label: 'Operadora Y', data: DATA.mensal.Y.custo_per_capita_mensal, borderColor: C.y, backgroundColor: C.y, pointBorderColor: C.card, pointBorderWidth: 2 }
+    ] },
+    options: {
+      layout: { padding: { right: 70, top: 6 } },
+      scales: { x: noGrid(), y: gridOpts({ min: 0, ticks: { color: C.ink3, padding: 8, callback: v => 'R$ ' + v } }) },
+      plugins: { tooltip: { callbacks: { label: c => ` ${c.dataset.label}: ${fmtBRL(c.parsed.y)}`,
+        afterBody: items => { const x = items.find(i => i.datasetIndex === 0), y = items.find(i => i.datasetIndex === 1);
+          return x && y ? [`Razão Y/X: ${nf(2).format(y.parsed.y / x.parsed.y)}×`] : []; } } } }
+    },
+    plugins: [markerPlugin(idxJan, 'Migração'), endLabelPlugin(v => fmtBRL(v))]
+  });
+};
+
+/* --- Aba 2: composição por classificação --- */
+let classifMode = 'pct';
+builders.classif = () => {
+  const K = DATA.classificacao;
+  charts.classif = new Chart(document.getElementById('c-classif'), {
+    type: 'bar',
+    data: { labels: K.labels, datasets: [
+      { label: 'Operadora X', data: K.X.pct, backgroundColor: C.x, borderColor: C.card, borderWidth: { right: 0, top: 1, bottom: 1 } },
+      { label: 'Operadora Y', data: K.Y.pct, backgroundColor: C.y, borderColor: C.card, borderWidth: { right: 0, top: 1, bottom: 1 } }
+    ] },
+    options: {
+      indexAxis: 'y',
+      interaction: { mode: 'index', axis: 'y', intersect: false },
+      datasets: { bar: { barPercentage: 0.82, categoryPercentage: 0.72 } },
+      scales: { y: noGrid({ ticks: { color: C.ink2, font: { size: 12 } } }),
+                x: gridOpts({ min: 0, ticks: { color: C.ink3, padding: 6, callback: v => classifMode === 'pct' ? v + '%' : 'R$ ' + v } }) },
+      plugins: { tooltip: { callbacks: {
+        label: c => { const op = c.datasetIndex === 0 ? 'X' : 'Y', i = c.dataIndex;
+          return ` ${c.dataset.label}: ${fmtPct(K[op].pct[i], 2)} · ${fmtMi(K[op].abs[i] * 1e6, 1)}`; } } } }
+    }
+  });
+};
+function setClassif(mode) {
+  classifMode = mode;
+  const K = DATA.classificacao, ch = charts.classif;
+  document.getElementById('classif-desc').textContent = mode === 'pct'
+    ? 'Participação % na despesa bruta do período · X vs Y'
+    : 'Despesa bruta do período em R$ milhões · X vs Y (a X é a carteira maior)';
+  if (!ch) return;
+  ch.data.datasets[0].data = K.X[mode]; ch.data.datasets[1].data = K.Y[mode];
+  ch.update();
+}
+
+/* --- Aba 2: receita × despesa (Y) e sinistralidade --- */
+builders.recdesp = () => {
+  const Y = DATA.mensal.Y;
+  charts.recdesp = new Chart(document.getElementById('c-recdesp'), {
+    type: 'bar',
+    data: { labels: meses, datasets: [
+      { label: 'Receita', data: Y.receita.map(v => v / 1e6), backgroundColor: C.neutral },
+      { label: 'Despesa líquida', data: Y.despesa_liquida.map(v => v / 1e6), backgroundColor: C.y }
+    ] },
+    options: {
+      datasets: { bar: { barPercentage: 0.86, categoryPercentage: 0.7 } },
+      scales: { x: noGrid(), y: gridOpts({ min: 0, ticks: { color: C.ink3, padding: 8, callback: v => 'R$ ' + v + ' mi' } }) },
+      plugins: { tooltip: { callbacks: { label: c => ` ${c.dataset.label}: ${fmtBRL(c.parsed.y, 2)} mi`,
+        afterBody: items => [`Resultado assistencial: ${fmtMi((Y.receita[items[0].dataIndex] - Y.despesa_liquida[items[0].dataIndex]))}`] } } }
+    },
+    plugins: [markerPlugin(idxJan, 'Migração (+10 mil vidas sem receita)')]
+  });
+  charts.sinistro = new Chart(document.getElementById('c-sinistro'), {
+    type: 'line',
+    data: { labels: meses, datasets: [
+      { label: 'Sinistralidade Y', data: Y.sinistralidade_pct, borderColor: C.accent, backgroundColor: alpha(C.accent, .10), fill: true, pointBackgroundColor: C.accent, pointBorderColor: C.card, pointBorderWidth: 2, pointRadius: 4 }
+    ] },
+    options: {
+      layout: { padding: { top: 4 } },
+      scales: { x: noGrid(), y: gridOpts({ min: 0, max: 100, ticks: { color: C.ink3, padding: 8, stepSize: 20, callback: v => v + '%' } }) },
+      plugins: { tooltip: { callbacks: { label: c => ` Sinistralidade: ${fmtPct(c.parsed.y, 2)}`,
+        afterLabel: c => ` ROI assistencial: ${fmtPct(Y.roi_pct[c.dataIndex], 1)}` } } }
+    },
+    plugins: [refLinePlugin(80, 'Referência de mercado ≈ 80%'), {
+      id: 'periodo', afterDatasetsDraw(chart) {
+        const { ctx, chartArea: a, scales: { y } } = chart, v = DATA.periodo.Y.sinistralidade_pct, py = y.getPixelForValue(v);
+        ctx.save(); ctx.fillStyle = '#EAF1F7'; ctx.font = '600 11px ' + css('--font'); ctx.textAlign = 'left';
+        ctx.fillText(`Período: ${fmtPct(v, 2)}`, a.left + 6, py - 26); ctx.restore();
+      } }]
+  });
+};
+
+/* --- Aba 3: pirâmide --- */
+let pirOp = 'Y';
+builders.piramide = () => {
+  const F = DATA.faixa;
+  charts.piramide = new Chart(document.getElementById('c-piramide'), {
+    type: 'bar',
+    data: { labels: [...F.labels].reverse(), datasets: [{ label: '% das vidas', data: [] }, { label: '% da despesa bruta', data: [] }] },
+    options: {
+      indexAxis: 'y',
+      interaction: { mode: 'index', axis: 'y', intersect: false },
+      datasets: { bar: { barPercentage: 0.9, categoryPercentage: 0.84 } },
+      scales: { y: { stacked: true, grid: { display: false }, border: { display: false }, ticks: { color: C.ink2 } },
+                x: gridOpts({ stacked: true, ticks: { color: C.ink3, padding: 6, callback: v => Math.abs(v) + '%' } }) },
+      plugins: { tooltip: { callbacks: { label: c => ` ${c.dataset.label}: ${fmtPct(Math.abs(c.parsed.x), 2)}` } } }
+    },
+    plugins: [{ id: 'pirlabels', afterDatasetsDraw(chart) {
+      const { ctx } = chart;
+      chart.data.datasets.forEach((ds, i) => chart.getDatasetMeta(i).data.forEach((bar, j) => {
+        const v = Math.abs(ds.data[j]); if (v < 2.5) return;
+        ctx.save(); ctx.fillStyle = '#EAF1F7'; ctx.font = '600 11px ' + css('--font'); ctx.textBaseline = 'middle';
+        ctx.textAlign = i === 0 ? 'right' : 'left';
+        ctx.fillText(fmtPct(v, 1), bar.x + (i === 0 ? -6 : 6), bar.y); ctx.restore();
+      }));
+    } }]
+  });
+  setPir(pirOp);
+};
+function setPir(op) {
+  pirOp = op;
+  const F = DATA.faixa[op], col = op === 'X' ? C.x : C.y;
+  const v = [...F.vidas_pct].reverse(), d = [...F.despesa_pct].reverse();
+  document.getElementById('pir-legend').innerHTML =
+    `<span><i class="sw" style="background:${alpha(col, .45)};outline:1px solid ${col}"></i>% das vidas (Operadora ${op})</span><span><i class="sw" style="background:${col}"></i>% da despesa bruta (Operadora ${op})</span>`;
+  const i59 = DATA.faixa.labels.indexOf('59 e acima'), i018 = DATA.faixa.labels.indexOf('0 - 18');
+  document.getElementById('pir-callout').innerHTML = op === 'Y'
+    ? `<i class="bi bi-exclamation-triangle-fill"></i><div><strong>Faixa 59+: ${fmtPct(F.vidas_pct[i59], 1)} das vidas e ${fmtPct(F.despesa_pct[i59], 1)} da despesa.</strong><p>Despesa bruta de ${fmtBRL(F.por_vida[i59])} por vida/mês nessa faixa. Poucos eventos de alto custo movem o resultado, e o envelhecimento da carteira é estrutural.</p></div>`
+    : `<i class="bi bi-info-circle-fill"></i><div><strong>Carteira jovem: a faixa 0–18 tem ${fmtPct(F.vidas_pct[i018], 1)} das vidas e ${fmtPct(F.despesa_pct[i018], 1)} da despesa.</strong><p>A faixa 59+ tem só ${fmtPct(F.vidas_pct[i59], 1)} das vidas, mas ${fmtPct(F.despesa_pct[i59], 1)} da despesa. Com a migração natural entre faixas, o custo vai subir nos próximos anos.</p></div>`;
+  const ch = charts.piramide; if (!ch) return;
+  const lim = Math.ceil(Math.max(...v, ...d) / 10) * 10 + 10;
+  Object.assign(ch.options.scales.x, { min: -lim, max: lim });
+  ch.options.scales.x.ticks.stepSize = lim > 60 ? 20 : 10;
+  Object.assign(ch.data.datasets[0], { data: v.map(x => -x), backgroundColor: alpha(col, .45), borderColor: col, borderWidth: 1, borderSkipped: false });
+  Object.assign(ch.data.datasets[1], { data: d, backgroundColor: col, borderSkipped: false });
+  ch.update();
+}
+
+/* --- Aba 3: despesa por vida por faixa --- */
+builders.porVida = () => {
+  const F = DATA.faixa;
+  charts.porVida = new Chart(document.getElementById('c-porvida'), {
+    type: 'bar',
+    data: { labels: F.labels, datasets: [
+      { label: 'Operadora X', data: F.X.por_vida, backgroundColor: C.x },
+      { label: 'Operadora Y', data: F.Y.por_vida, backgroundColor: C.y }
+    ] },
+    options: {
+      datasets: { bar: { barPercentage: 0.86, categoryPercentage: 0.74 } },
+      scales: { x: noGrid({ ticks: { color: C.ink2, maxRotation: 0, autoSkip: false, font: { size: 11 } } }),
+                y: gridOpts({ min: 0, ticks: { color: C.ink3, padding: 8, callback: v => 'R$ ' + v } }) },
+      plugins: { tooltip: { callbacks: { label: c => ` ${c.dataset.label}: ${fmtBRL(c.parsed.y)}`,
+        afterBody: items => { const i = items[0].dataIndex, r = F.Y.por_vida[i] / F.X.por_vida[i] - 1;
+          return [`Y vs X: ${r >= 0 ? '+' : ''}${fmtPct(r * 100, 1)} ${r < 0 ? '(Y mais barata)' : '(Y mais cara)'}`]; } } } }
+    }
+  });
+};
+
+/* --- Aba 3: migração --- */
+builders.migVidas = () => {
+  const M = DATA.migracao;
+  charts.migVidas = new Chart(document.getElementById('c-migvidas'), {
+    type: 'line',
+    data: { labels: M.data_ref.map(mesLbl), datasets: [
+      { label: 'Plano 340154BC84 (X)', data: M.vidas_x, borderColor: C.x, backgroundColor: alpha(C.x, .12), fill: true, stepped: 'middle', pointBackgroundColor: C.x, pointBorderColor: C.card2, pointBorderWidth: 2 },
+      { label: 'Plano 0F2726E6AC (Y)', data: M.vidas_y, borderColor: C.y, backgroundColor: alpha(C.y, .2), fill: true, stepped: 'middle', pointBackgroundColor: C.y, pointBorderColor: C.card2, pointBorderWidth: 2 }
+    ] },
+    options: {
+      scales: { x: noGrid(), y: gridOpts({ min: 0, max: 12000, ticks: { color: C.ink3, padding: 8, stepSize: 3000, callback: v => fmtInt(v) } }) },
+      plugins: { tooltip: { callbacks: { label: c => ` ${c.dataset.label}: ${fmtInt(c.parsed.y)} vidas` } } }
+    },
+    plugins: [markerPlugin(M.data_ref.indexOf('2026-01-01'), 'jan/26')]
+  });
+};
+builders.migDesp = () => {
+  const M = DATA.migracao;
+  charts.migDesp = new Chart(document.getElementById('c-migdesp'), {
+    type: 'bar',
+    data: { labels: M.data_ref.map(mesLbl), datasets: [
+      { label: 'Plano 340154BC84 (X)', data: M.desp_x.map(v => v / 1e3), backgroundColor: C.x },
+      { label: 'Plano 0F2726E6AC (Y)', data: M.desp_y.map(v => v / 1e3), backgroundColor: C.y }
+    ] },
+    options: {
+      datasets: { bar: { barPercentage: 0.86, categoryPercentage: 0.74 } },
+      scales: { x: noGrid(), y: gridOpts({ min: 0, ticks: { color: C.ink3, padding: 8, callback: v => 'R$ ' + v + ' mil' } }) },
+      plugins: { tooltip: { callbacks: { label: c => ` ${c.dataset.label}: ${fmtBRL(c.parsed.y * 1e3, 0)}` } } }
+    },
+    plugins: [markerPlugin(M.data_ref.indexOf('2026-01-01'), 'Cauda X: R$ 0,95 mi')]
+  });
+};
+
+/* ===================== Visão em tabela (acessibilidade) ===================== */
+const tableSpecs = {
+  cpcMensal: () => ({ head: ['Competência', 'X (R$/vida)', 'Y (R$/vida)', 'Razão Y/X'],
+    rows: meses.map((m, i) => { const x = DATA.mensal.X.custo_per_capita_mensal[i], y = DATA.mensal.Y.custo_per_capita_mensal[i];
+      return [m, fmtBRL(x), fmtBRL(y), nf(2).format(y / x) + '×']; }) }),
+  classif: () => { const K = DATA.classificacao; return { head: ['Classificação', 'X %', 'X R$ mi', 'Y %', 'Y R$ mi'],
+    rows: K.labels.map((l, i) => [l, fmtPct(K.X.pct[i], 2), nf(1).format(K.X.abs[i]), fmtPct(K.Y.pct[i], 2), nf(1).format(K.Y.abs[i])]) }; },
+  recdesp: () => { const Y = DATA.mensal.Y; return { head: ['Competência', 'Receita (R$ mi)', 'Despesa líq. (R$ mi)', 'Sinistralidade', 'ROI', 'Vidas'],
+    rows: meses.map((m, i) => [m, nf(2).format(Y.receita[i] / 1e6), nf(2).format(Y.despesa_liquida[i] / 1e6), fmtPct(Y.sinistralidade_pct[i], 2), fmtPct(Y.roi_pct[i], 1), fmtInt(Y.vidas[i])]) }; },
+  piramide: () => { const F = DATA.faixa[pirOp]; return { head: ['Faixa etária', `% vidas (${pirOp})`, `% despesa (${pirOp})`, 'Despesa/vida/mês'],
+    rows: DATA.faixa.labels.map((l, i) => [l, fmtPct(F.vidas_pct[i], 2), fmtPct(F.despesa_pct[i], 2), fmtBRL(F.por_vida[i])]) }; },
+  porVida: () => { const F = DATA.faixa; return { head: ['Faixa etária', 'X (R$/vida)', 'Y (R$/vida)', 'Y vs X'],
+    rows: F.labels.map((l, i) => [l, fmtBRL(F.X.por_vida[i]), fmtBRL(F.Y.por_vida[i]), fmtPct((F.Y.por_vida[i] / F.X.por_vida[i] - 1) * 100, 1)]) }; },
+  migVidas: () => { const M = DATA.migracao; return { head: ['Competência', 'Vidas 340154BC84 (X)', 'Vidas 0F2726E6AC (Y)'],
+    rows: M.data_ref.map((d, i) => [mesLbl(d), fmtInt(M.vidas_x[i]), fmtInt(M.vidas_y[i])]) }; },
+  migDesp: () => { const M = DATA.migracao; return { head: ['Competência', 'Desp. líq. 340154BC84 (X)', 'Desp. líq. 0F2726E6AC (Y)'],
+    rows: M.data_ref.map((d, i) => [mesLbl(d), fmtBRL(M.desp_x[i], 0), fmtBRL(M.desp_y[i], 0)]) }; }
+};
+function renderTable(card) {
+  const spec = tableSpecs[card.dataset.chart](); const tv = card.querySelector('.table-view');
+  tv.innerHTML = `<table class="data"><thead><tr>${spec.head.map(h => `<th>${h}</th>`).join('')}</tr></thead><tbody>${
+    spec.rows.map(r => `<tr>${r.map(c => `<td>${c}</td>`).join('')}</tr>`).join('')}</tbody></table>`;
+}
+document.querySelectorAll('[data-toggle-table]').forEach(btn => btn.addEventListener('click', () => {
+  const card = btn.closest('[data-chart]'); const on = card.classList.toggle('show-table');
+  if (on) renderTable(card);
+  btn.innerHTML = on ? '<i class="bi bi-bar-chart"></i> Gráfico' : '<i class="bi bi-table"></i> Tabela';
+}));
+
+/* ===================== Controles ===================== */
+document.querySelectorAll('[data-classif]').forEach(b => b.addEventListener('click', () => {
+  document.querySelectorAll('[data-classif]').forEach(x => x.setAttribute('aria-pressed', x === b));
+  setClassif(b.dataset.classif);
+  const card = b.closest('[data-chart]'); if (card.classList.contains('show-table')) renderTable(card);
+}));
+document.querySelectorAll('[data-pir]').forEach(b => b.addEventListener('click', () => {
+  document.querySelectorAll('[data-pir]').forEach(x => x.setAttribute('aria-pressed', x === b));
+  setPir(b.dataset.pir);
+  const card = b.closest('[data-chart]'); if (card.classList.contains('show-table')) renderTable(card);
+}));
+
+/* ===================== Abas (gráficos criados sob demanda) ===================== */
+function buildVisible(panel) {
+  if (!window.Chart) return;
+  panel.querySelectorAll('[data-chart]').forEach(card => {
+    const k = card.dataset.chart;
+    if (!built.has(k) && builders[k]) { builders[k](); built.add(k); }
+  });
+}
+const tabs = [...document.querySelectorAll('nav.tabs [role="tab"]')];
+function activate(tab) {
+  tabs.forEach(t => { const on = t === tab; t.setAttribute('aria-selected', on); t.tabIndex = on ? 0 : -1;
+    document.getElementById(t.getAttribute('aria-controls')).classList.toggle('active', on); });
+  const panel = document.getElementById(tab.getAttribute('aria-controls'));
+  buildVisible(panel);
+  history.replaceState(null, '', '#' + panel.id);
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+tabs.forEach((t, i) => {
+  t.addEventListener('click', () => activate(t));
+  t.addEventListener('keydown', e => {
+    if (e.key === 'ArrowRight' || e.key === 'ArrowLeft') {
+      const n = tabs[(i + (e.key === 'ArrowRight' ? 1 : -1) + tabs.length) % tabs.length]; n.focus(); activate(n);
+    }
+  });
+});
+const initial = tabs.find(t => '#' + t.getAttribute('aria-controls') === location.hash) || tabs[0];
+activate(initial);
+window.addEventListener('beforeprint', () => document.querySelectorAll('section.tab').forEach(buildVisible));
+</script>
+</body>
+</html>
